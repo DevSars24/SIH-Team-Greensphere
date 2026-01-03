@@ -153,9 +153,9 @@ export default function LandingPage() {
                   desc: "Focuses on deep learning optimization and agricultural data pattern recognition." 
                 },
                 { 
-                  name: "Anushka Sonkar", 
+                  name: "Bhaskar Kumar", 
                   role: "UX Engineer", 
-                  initials: "AS", 
+                  initials: "Bk", 
                   desc: "Crafting intuitive digital experiences for users in diverse rural environments." 
                 }
               ].map((dev, i) => (
