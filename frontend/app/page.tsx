@@ -141,9 +141,9 @@ export default function LandingPage() {
             <div className="grid lg:grid-cols-3 gap-8">
               {[
                 { 
-                  name: "Saurabh Singh Rajput", 
+                  name: "Saurabh Singh", 
                   role: "System Architect", 
-                  initials: "SSR", 
+                  initials: "SARS", 
                   desc: "Specializes in scalable backend systems and high-performance ML model integration." 
                 },
                 { 
