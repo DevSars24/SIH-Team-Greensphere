@@ -124,7 +124,7 @@ export default function GetStarted() {
           >
             <div className="relative z-10 p-1.5 md:p-2 bg-[#0a0a0a] border border-white/10 rounded-[2.5rem] md:rounded-[3rem] shadow-2xl">
               <Image
-                src="/Krishi.png" 
+                src="/krishi.png" 
                 alt="Krishi Mitra"
                 width={500}
                 height={600}
