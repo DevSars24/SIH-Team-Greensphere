@@ -14,17 +14,20 @@ import {
   Sparkles
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 export default function GetStarted() {
+  const router = useRouter();
+  
   const features = [
     {
       title: "AI Chatbot",
       subtitle: "Krishi Sathi",
       desc: "Instant answers for crops & soil.",
       icon: <Bot className="w-5 h-5 text-blue-400" />,
-      // Changed: Spans only apply on md and up
-      size: "col-span-1 row-span-1", 
-      color: "rgba(59, 130, 246, 0.1)"
+      size: "col-span-1 row-span-1",
+      color: "rgba(59, 130, 246, 0.1)",
+      link: "/chatbot"
     },
     {
       title: "Crop Doctor",
@@ -32,7 +35,8 @@ export default function GetStarted() {
       desc: "Upload images to diagnose plant health immediately with AI vision.",
       icon: <Sprout className="w-5 h-5 text-emerald-400" />,
       size: "md:col-span-2 col-span-1 row-span-1",
-      color: "rgba(16, 185, 129, 0.1)"
+      color: "rgba(16, 185, 129, 0.1)",
+      link: "#"
     },
     {
       title: "Market Intel",
@@ -40,7 +44,8 @@ export default function GetStarted() {
       desc: "Real-time pricing data.",
       icon: <TrendingUp className="w-5 h-5 text-orange-400" />,
       size: "col-span-1 row-span-1",
-      color: "rgba(249, 115, 22, 0.1)"
+      color: "rgba(249, 115, 22, 0.1)",
+      link: "#"
     },
     {
       title: "Govt Schemes",
@@ -48,7 +53,8 @@ export default function GetStarted() {
       desc: "Financial aid and subsidies tailored for you.",
       icon: <Gavel className="w-5 h-5 text-purple-400" />,
       size: "col-span-1 md:row-span-2",
-      color: "rgba(168, 85, 247, 0.1)"
+      color: "rgba(168, 85, 247, 0.1)",
+      link: "#"
     },
     {
       title: "Women Farmers",
@@ -56,9 +62,16 @@ export default function GetStarted() {
       desc: "Special resources and training modules.",
       icon: <Users className="w-5 h-5 text-rose-400" />,
       size: "md:col-span-2 col-span-1 row-span-1",
-      color: "rgba(244, 63, 94, 0.1)"
+      color: "rgba(244, 63, 94, 0.1)",
+      link: "#"
     },
   ];
+
+  const handleFeatureClick = (link: string) => {
+    if (link !== "#") {
+      router.push(link);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#000000] text-slate-200 selection:bg-blue-500/30 overflow-x-hidden relative">
@@ -137,7 +150,6 @@ export default function GetStarted() {
         </div>
 
         {/* --- BENTO BOX FEATURES --- */}
-        {/* Adjusted grid for mobile: 1 col on small, 3 cols on md+ */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {features.map((item, i) => (
             <motion.div
@@ -147,7 +159,8 @@ export default function GetStarted() {
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
               whileHover={{ scale: 0.99 }}
-              className={`${item.size} group relative overflow-hidden rounded-[2rem] md:rounded-[2.5rem] border border-white/5 bg-[#050505] p-6 md:p-8 hover:border-white/20 transition-all duration-500 min-h-[220px] md:min-h-0`}
+              onClick={() => handleFeatureClick(item.link)}
+              className={`${item.size} group relative overflow-hidden rounded-[2rem] md:rounded-[2.5rem] border border-white/5 bg-[#050505] p-6 md:p-8 hover:border-white/20 transition-all duration-500 min-h-[220px] md:min-h-0 cursor-pointer`}
             >
               {/* Glow Effect */}
               <div 
@@ -169,8 +182,10 @@ export default function GetStarted() {
                     {item.desc}
                   </p>
                   <div className="mt-4 flex items-center gap-2 text-white md:opacity-0 md:group-hover:opacity-100 md:-translate-x-2 md:group-hover:translate-x-0 transition-all">
-                    <span className="text-[10px] font-bold uppercase tracking-widest">Go to Tool</span>
-                    <MoveRight className="w-3 h-3" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest">
+                      {item.link === "#" ? "Coming Soon" : "Go to Tool"}
+                    </span>
+                    {item.link !== "#" && <MoveRight className="w-3 h-3" />}
                   </div>
                 </div>
               </div>
