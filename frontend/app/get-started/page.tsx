@@ -11,7 +11,8 @@ import {
   Gavel, 
   Users, 
   ArrowLeft,
-  Sparkles
+  Sparkles,
+  GraduationCap
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -19,53 +20,65 @@ import { useRouter } from "next/navigation";
 export default function GetStarted() {
   const router = useRouter();
   
-  const features = [
-    {
-      title: "AI Chatbot",
-      subtitle: "Krishi Sathi",
-      desc: "Instant answers for crops & soil.",
-      icon: <Bot className="w-5 h-5 text-blue-400" />,
-      size: "col-span-1 row-span-1",
-      color: "rgba(59, 130, 246, 0.1)",
-      link: "/chatbot"
-    },
-    {
-      title: "Crop Doctor",
-      subtitle: "Disease Detection",
-      desc: "Upload images to diagnose plant health immediately with AI vision.",
-      icon: <Sprout className="w-5 h-5 text-emerald-400" />,
-      size: "md:col-span-2 col-span-1 row-span-1",
-      color: "rgba(16, 185, 129, 0.1)",
-      link: "#"
-    },
-    {
-      title: "Market Intel",
-      subtitle: "Live Mandi",
-      desc: "Real-time pricing data.",
-      icon: <TrendingUp className="w-5 h-5 text-orange-400" />,
-      size: "col-span-1 row-span-1",
-      color: "rgba(249, 115, 22, 0.1)",
-      link: "#"
-    },
-    {
-      title: "Govt Schemes",
-      subtitle: "Benefits",
-      desc: "Financial aid and subsidies tailored for you.",
-      icon: <Gavel className="w-5 h-5 text-purple-400" />,
-      size: "col-span-1 md:row-span-2",
-      color: "rgba(168, 85, 247, 0.1)",
-      link: "#"
-    },
-    {
-      title: "Women Farmers",
-      subtitle: "Empowerment",
-      desc: "Special resources and training modules.",
-      icon: <Users className="w-5 h-5 text-rose-400" />,
-      size: "md:col-span-2 col-span-1 row-span-1",
-      color: "rgba(244, 63, 94, 0.1)",
-      link: "#"
-    },
-  ];
+  // Is file mein sirf features array ki links change ki hain:
+const features = [
+  {
+    title: "AI Chatbot",
+    subtitle: "Krishi Sathi",
+    desc: "Instant answers for crops & soil.",
+    icon: <Bot className="w-5 h-5 text-blue-400" />,
+    size: "col-span-1 row-span-1",
+    color: "rgba(59, 130, 246, 0.1)",
+    link: "/chatbot" // Already set
+  },
+  {
+    title: "Krishi Vidya",
+    subtitle: "Learning Hub",
+    desc: "Master modern farming with expert-led video lessons.",
+    icon: <GraduationCap className="w-5 h-5 text-yellow-400" />,
+    size: "col-span-1 row-span-1",
+    color: "rgba(234, 179, 8, 0.1)",
+    link: "/academy" 
+  },
+
+
+  {
+    title: "Crop Doctor",
+    subtitle: "Disease Detection",
+    desc: "Upload images to diagnose plant health immediately with AI vision.",
+    icon: <Sprout className="w-5 h-5 text-emerald-400" />,
+    size: "md:col-span-2 col-span-1 row-span-1",
+    color: "rgba(16, 185, 129, 0.1)",
+    link: "/crop-doctor" // Updated
+  },
+  {
+    title: "Market Intel",
+    subtitle: "Live Mandi",
+    desc: "Real-time pricing data.",
+    icon: <TrendingUp className="w-5 h-5 text-orange-400" />,
+    size: "col-span-1 row-span-1",
+    color: "rgba(249, 115, 22, 0.1)",
+    link: "/mandi" // Updated
+  },
+  {
+    title: "Govt Schemes",
+    subtitle: "Benefits",
+    desc: "Financial aid and subsidies tailored for you.",
+    icon: <Gavel className="w-5 h-5 text-purple-400" />,
+    size: "col-span-1 md:row-span-2",
+    color: "rgba(168, 85, 247, 0.1)",
+    link: "/schemes" // Updated
+  },
+  {
+    title: "Women Farmers",
+    subtitle: "Empowerment",
+    desc: "Special resources and training modules.",
+    icon: <Users className="w-5 h-5 text-rose-400" />,
+    size: "md:col-span-2 col-span-1 row-span-1",
+    color: "rgba(244, 63, 94, 0.1)",
+    link: "/women-empowerment" // Updated
+  },
+];
 
   const handleFeatureClick = (link: string) => {
     if (link !== "#") {
