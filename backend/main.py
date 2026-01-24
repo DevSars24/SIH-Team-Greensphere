@@ -5,6 +5,16 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+from contextlib import asynccontextmanager
+
+# Import tools
+from tools import (
+    get_market_price, 
+    get_government_schemes, 
+    get_weather_forecast, 
+    recommend_crop, 
+    diagnose_crop_disease
+)
 
 # ===============================
 # Load .env from backend folder
@@ -40,12 +50,38 @@ app.add_middleware(
 )
 
 # ===============================
-# Gemini Model Config
+# Gemini Model Config (Agentic)
 # ===============================
 MODEL_NAME = "gemini-2.5-flash-lite"
 
+# Define the list of tools
+tools_list = [
+    get_market_price, 
+    get_government_schemes, 
+    get_weather_forecast, 
+    recommend_crop, 
+    diagnose_crop_disease
+]
+
+# System Instruction for the Persona
+SYSTEM_INSTRUCTION = """
+You are 'Krishi Sathi', an expert AI agricultural advisor for Indian farmers.
+Your mission is to help farmers increase their yield and income.
+
+CORE BEHAVIORS:
+1. **Multilingual**: Always detect the language of the user's query and respond in the SAME language (English, Hindi, Marathi, etc.).
+2. **Empathetic**: Use respectful and encouraging language (e.g., "Namaste", "Kisan Bhai").
+3. **Data-Driven**: NEVER make up market prices or schemes. ALWAYS use your TOOLS to fetch real data.
+   - If asked about prices -> usage `get_market_price`
+   - If asked about rain/weather -> use `get_weather_forecast`
+   - If asked about schemes -> use `get_government_schemes`
+4. **Actionable**: Give clear, step-by-step advice.
+
+If a tool fails or returns no data, apologize and provide general advice, but admit you don't have the live data.
+"""
+
 generation_config = {
-    "temperature": 1,
+    "temperature": 0.4, # Lower temperature for more factual agentic responses
     "top_p": 0.95,
     "top_k": 64,
     "max_output_tokens": 8192,
@@ -68,31 +104,38 @@ class ChatResponse(BaseModel):
 async def health_check():
     return {
         "status": "ok",
-        "message": "🚀 Gemini chatbot backend running"
+        "message": "🚀 Gemini Agentic Chatbot running"
     }
 
 # ===============================
-# Chat Endpoint
+# Chat Endpoint (Agentic)
 # ===============================
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
     try:
+        # Initialize model WITH tools and system instruction
         model = genai.GenerativeModel(
             model_name=MODEL_NAME,
             generation_config=generation_config,
+            tools=tools_list,
+            system_instruction=SYSTEM_INSTRUCTION
         )
 
-        chat_session = model.start_chat(history=[])
+        # Start chat with automatic function calling enabled
+        chat_session = model.start_chat(
+            history=[],
+            enable_automatic_function_calling=True
+        )
+        
+        # Send message and get response (Gemini handles the tool loop internally)
         response = chat_session.send_message(request.message)
 
         return ChatResponse(response=response.text)
 
     except Exception as e:
-        print("Gemini Error:", e)
-        raise HTTPException(
-            status_code=500,
-            detail="Error communicating with Gemini"
-        )
+        print("Agent Error:", e)
+        # Fallback for errors
+        return ChatResponse(response="Maaf karein, abhi server mein kuch dikkat hai. Kripya thodi der baad prayas karein. (Sorry, server error, please try again later.)")
 
 # ===============================
 # Run Server
