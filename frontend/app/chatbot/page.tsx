@@ -47,7 +47,11 @@ export default function ChatbotPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/chat", {
+      // Use environment variable or fallback to localhost for development
+      // In production, set NEXT_PUBLIC_API_URL to https://backend-xjfr.onrender.com
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+      const response = await fetch(`${API_BASE_URL}/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
