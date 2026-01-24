@@ -2,9 +2,9 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { 
-  Bot, Send, ArrowLeft, Loader2, 
-  BookOpen, BarChart3, Cloud, 
+import {
+  Bot, Send, ArrowLeft, Loader2,
+  BookOpen, BarChart3, Cloud,
   Shield, Sparkles, Mic, Paperclip, ChevronDown
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -42,38 +42,63 @@ export default function ChatbotPage() {
     if (!inputText.trim() || isLoading) return;
     const userMsg: Message = { id: Date.now().toString(), text: inputText, sender: "user", timestamp: new Date() };
     setMessages(prev => [...prev, userMsg]);
+    const currentInput = inputText; // Store input for the request
     setInputText("");
     setIsLoading(true);
 
-    setTimeout(() => {
+    try {
+      const response = await fetch("http://localhost:8000/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: currentInput }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch response");
+      }
+
+      const data = await response.json();
+
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: "I recommend rotating your current Wheat crop with Legumes like Moong Dal. This naturally fixes nitrogen in the soil and can reduce fertilizer costs by 20% next season.",
+        text: data.response,
         sender: "bot",
         timestamp: new Date()
       };
       setMessages(prev => [...prev, botResponse]);
+    } catch (error) {
+      console.error("Chat error:", error);
+      const errorResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "Sorry, I'm having trouble connecting to the server. Please check if the backend is running.",
+        sender: "bot",
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorResponse]);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#050505] text-slate-200 selection:bg-emerald-500/30 font-sans pb-10">
-      
+
       {/* PEAK BACKGROUND */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <motion.div 
+        <motion.div
           animate={{ opacity: [0.1, 0.2, 0.1], scale: [1, 1.1, 1] }}
           transition={{ duration: 10, repeat: Infinity }}
-          className="absolute top-[-10%] right-[-10%] w-[70%] h-[70%] bg-emerald-600/10 rounded-full blur-[120px]" 
+          className="absolute top-[-10%] right-[-10%] w-[70%] h-[70%] bg-emerald-600/10 rounded-full blur-[120px]"
         />
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" />
       </div>
 
       <div className="max-w-4xl mx-auto px-4 md:px-6 py-4 relative z-10">
-        
+
         {/* MOBILE RESPONSIVE HEADER */}
-        <motion.header 
+        <motion.header
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           className="sticky top-2 z-50 flex items-center justify-between p-3 mb-6 rounded-2xl bg-black/60 border border-white/10 backdrop-blur-xl"
@@ -101,7 +126,7 @@ export default function ChatbotPage() {
 
         {/* MAIN CONTENT: No longer fixed height, scrolls naturally */}
         <div className="flex flex-col gap-6">
-          
+
           {/* CHAT BUBBLES CONTAINER */}
           <div className="flex flex-col space-y-6 min-h-[400px]">
             <AnimatePresence mode="popLayout">
@@ -113,8 +138,8 @@ export default function ChatbotPage() {
                   className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div className={`max-w-[85%] md:max-w-[75%] px-4 py-3 rounded-2xl text-sm md:text-base leading-relaxed shadow-sm
-                    ${message.sender === "user" 
-                      ? "bg-blue-600 text-white rounded-tr-none" 
+                    ${message.sender === "user"
+                      ? "bg-blue-600 text-white rounded-tr-none"
                       : "bg-white/5 border border-white/10 backdrop-blur-sm rounded-tl-none"
                     }
                   `}>
@@ -126,7 +151,7 @@ export default function ChatbotPage() {
                   </div>
                 </motion.div>
               ))}
-              
+
               {isLoading && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-2 items-center text-emerald-500 pl-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -152,7 +177,7 @@ export default function ChatbotPage() {
                   placeholder="Ask about crops or weather..."
                   className="flex-1 bg-transparent border-none outline-none py-3 px-2 text-sm text-white placeholder:text-slate-500"
                 />
-                <Button 
+                <Button
                   onClick={handleSendMessage}
                   disabled={!inputText.trim() || isLoading}
                   className="rounded-full w-10 h-10 bg-emerald-500 hover:bg-emerald-400 text-black shrink-0 transition-transform active:scale-90"
@@ -175,7 +200,7 @@ export default function ChatbotPage() {
 
           {/* BENTO STATS: Stacks below chat on mobile, scrolls naturally */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <motion.div 
+            <motion.div
               whileInView={{ opacity: 1, scale: 1 }}
               initial={{ opacity: 0, scale: 0.9 }}
               className="p-5 rounded-3xl bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20"
@@ -191,7 +216,7 @@ export default function ChatbotPage() {
               <p className="text-[10px] text-orange-400 mt-2 font-bold uppercase tracking-wider">⚠️ No rain expected for 4 days</p>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               whileInView={{ opacity: 1, scale: 1 }}
               initial={{ opacity: 0, scale: 0.9 }}
               className="p-5 rounded-3xl bg-white/[0.03] border border-white/10"
@@ -215,19 +240,19 @@ export default function ChatbotPage() {
 
           {/* ADDITIONAL FEATURES LIST */}
           <div className="space-y-3">
-             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] px-1">Farmer Tools</h3>
-             {[
-               { icon: <Shield />, label: "Pest & Disease Diagnosis", color: "text-red-400" },
-               { icon: <BookOpen />, label: "Crop Knowledge Base", color: "text-blue-400" }
-             ].map((item, i) => (
-               <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
-                 <div className="flex items-center gap-3">
-                    <span className={item.color}>{item.icon}</span>
-                    <span className="text-sm font-medium">{item.label}</span>
-                 </div>
-                 <ChevronDown className="w-4 h-4 text-slate-600 -rotate-90" />
-               </div>
-             ))}
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] px-1">Farmer Tools</h3>
+            {[
+              { icon: <Shield />, label: "Pest & Disease Diagnosis", color: "text-red-400" },
+              { icon: <BookOpen />, label: "Crop Knowledge Base", color: "text-blue-400" }
+            ].map((item, i) => (
+              <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <span className={item.color}>{item.icon}</span>
+                  <span className="text-sm font-medium">{item.label}</span>
+                </div>
+                <ChevronDown className="w-4 h-4 text-slate-600 -rotate-90" />
+              </div>
+            ))}
           </div>
 
         </div>
