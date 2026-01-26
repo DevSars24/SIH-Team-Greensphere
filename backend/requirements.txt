@@ -2,3 +2,7 @@ fastapi
 uvicorn
 google-generativeai
 python-dotenv
+motor
+python-multipart
+livekit-api
+certifi

@@ -16,6 +16,12 @@ from tools import (
     diagnose_crop_disease
 )
 
+# Import Database
+from database import client
+
+# Import Routers
+from routers import women_empowerment, crop_doctor, community
+
 # ===============================
 # Load .env from backend folder
 # ===============================
@@ -29,14 +35,36 @@ load_dotenv(dotenv_path=ENV_PATH)
 api_key = os.getenv("GEMINI_API_KEY")
 
 if not api_key:
-    raise RuntimeError("❌ GEMINI_API_KEY not found. Check backend/.env")
+    # raise RuntimeError("❌ GEMINI_API_KEY not found. Check backend/.env")
+    print("Warning: GEMINI_API_KEY not found. Agentic chat will not work.")
 
-genai.configure(api_key=api_key)
+if api_key:
+    genai.configure(api_key=api_key)
+
+# ===============================
+# Lifecycle Manager (MongoDB)
+# ===============================
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    print("🚀 Connecting to MongoDB...")
+    # Trigger connection (optional check)
+    try:
+        await client.admin.command('ping')
+        print("✅ MongoDB Connected!")
+    except Exception as e:
+        print(f"❌ MongoDB Connection Failed: {e}")
+    
+    yield
+    
+    # Shutdown
+    print("🛑 Closing MongoDB Connection...")
+    client.close()
 
 # ===============================
 # FastAPI App
 # ===============================
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 
 # ===============================
 # CORS Configuration
@@ -48,6 +76,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ===============================
+# Include Routers
+# ===============================
+app.include_router(women_empowerment.router)
+app.include_router(crop_doctor.router)
+app.include_router(community.router)
 
 # ===============================
 # Gemini Model Config (Agentic)
@@ -113,6 +148,9 @@ async def health_check():
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
     try:
+        if not api_key:
+            return ChatResponse(response="API Key missing. Please configure backend/.env.")
+
         # Initialize model WITH tools and system instruction
         model = genai.GenerativeModel(
             model_name=MODEL_NAME,
