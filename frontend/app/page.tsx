@@ -157,9 +157,8 @@ export default function LandingPage() {
 
             <div className="grid lg:grid-cols-3 gap-8">
               {[
-                { name: "Saurabh Singh", role: "System Architect", initials: "SARS", desc: "Specializes in scalable backend systems and high-performance ML model integration." },
-                { name: "Sudhanshu Shekhar", role: "AI Lead", initials: "SS", desc: "Focuses on deep learning optimization and agricultural data pattern recognition." },
-                { name: "Bhaskar Kumar", role: "UX Engineer", initials: "Bk", desc: "Crafting intuitive digital experiences for users in diverse rural environments." }
+                { name: "Saurabh Singh", role: "System Architect and Web Designing", initials: "SARS", desc: "Specializes in scalable backend systems and high-performance ML model integration." },
+                { name: "Nitesh Kumar Varma", role: "AI AND ML lead", initials: "NKV", desc: "Crafting intuitive digital experiences for users in diverse rural environments." }
               ].map((dev, i) => (
                 <div key={i} className="reveal group">
                   <div className="h-full glass p-8 rounded-[2.5rem] border-white/5 hover:border-blue-500/50 transition-all duration-500 hover:-translate-y-2">
