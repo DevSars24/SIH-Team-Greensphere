@@ -33,7 +33,10 @@ class FinancialAid(BaseModel):
 # --- Self Help Groups (SHGs) ---
 class SHG(BaseModel):
     name: str
-    location: str
+    location: str # Keep for display formatted address
+    state: str
+    city: str
+    district: str
     members_count: int
     focus_area: str  # e.g., "Organic Farming", "Handicrafts"
     contact_person: str

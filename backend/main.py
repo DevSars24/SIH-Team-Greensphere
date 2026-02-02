@@ -20,7 +20,7 @@ from tools import (
 from database import client
 
 # Import Routers
-from routers import women_empowerment, crop_doctor, community
+from routers import women_empowerment, crop_doctor, community, kisan_kendra
 
 # ===============================
 # Load .env from backend folder
@@ -83,6 +83,7 @@ app.add_middleware(
 app.include_router(women_empowerment.router)
 app.include_router(crop_doctor.router)
 app.include_router(community.router)
+app.include_router(kisan_kendra.router)
 
 # ===============================
 # Gemini Model Config (Agentic)
