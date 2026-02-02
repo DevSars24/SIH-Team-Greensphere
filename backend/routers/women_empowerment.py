@@ -61,7 +61,39 @@ async def get_shgs():
     shgs = await database.shgs.find().to_list(100)
     if not shgs:
         return [
-            SHG(name="Laxmi SHG", location="Pune, Maharashtra", members_count=15, focus_area="Dairy Farming", contact_person="Rukmini Devi"),
+            SHG(
+                name="Kudumbashree Unit 42", 
+                location="Thiruvananthapuram, Kerala", 
+                state="Kerala",
+                city="Thiruvananthapuram",
+                district="Thiruvananthapuram",
+                members_count=20, 
+                focus_area="Food Processing", 
+                contact_person="Lakshmi Menon",
+                contact_number="+91 9876543210"
+            ),
+            SHG(
+                name="SEWA Gram Mahila Haat", 
+                location="Ahmedabad, Gujarat", 
+                state="Gujarat",
+                city="Ahmedabad",
+                district="Ahmedabad",
+                members_count=50, 
+                focus_area="Handicrafts & Textiles", 
+                contact_person="Benazir",
+                contact_number="+91 9123456780"
+            ),
+            SHG(
+                name="Bokaro Mahila Mandal", 
+                location="Bokaro, Jharkhand", 
+                state="Jharkhand",
+                city="Bokaro",
+                district="Bokaro",
+                members_count=15, 
+                focus_area="Mango Orchard Management", 
+                contact_person="Rina Devi",
+                contact_number="+91 9988776655"
+            ),
         ]
     return shgs
 
@@ -84,3 +116,49 @@ async def get_health_safety():
 async def create_health_safety(tip: HealthSafetyTip):
     await database.health_safety.insert_one(tip.dict())
     return tip
+
+# --- Training Chatbot Endpoint ---
+import google.generativeai as genai
+import os
+from pydantic import BaseModel
+
+class TrainingChatRequest(BaseModel):
+    message: str
+
+class TrainingChatResponse(BaseModel):
+    response: str
+
+TRAINING_SYSTEM_INSTRUCTION = """
+You are the "Krishi Vidya" AI Tutor, a friendly and encouraging mentor for women farmers taking a 6-week entrepreneurship course.
+Your goal is to explain concepts simply, give practical examples, and motivate them.
+
+Context: 
+The user is viewing a 6-week course covering:
+Week 0: Orientation
+Week 1: Sustainable Farming (Soil, Seeds, Water)
+Week 2: Integrated Farming (Poultry, Goats, Kitchen Garden)
+Week 3: Post-harvest & Processing (Value addition)
+Week 4: Business Basics (Accounting, Digital tools)
+Week 5: Marketing & Branding
+Week 6: Finance & Linkages (Loans, Schemes)
+
+If the user asks about a specific week, explain the key takeaways.
+Keep answers concise (under 100 words) but helpful.
+Support Languages: Hindi, English, Hinglish. Detect language and reply in same.
+"""
+
+@router.post("/training-chat", response_model=TrainingChatResponse)
+async def training_chat_endpoint(request: TrainingChatRequest):
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return TrainingChatResponse(response="Server Error: API Key missing.")
+
+    try:
+        model = genai.GenerativeModel(
+            model_name="gemini-2.0-flash", # Faster model for chat
+            system_instruction=TRAINING_SYSTEM_INSTRUCTION
+        )
+        response = model.generate_content(request.message)
+        return TrainingChatResponse(response=response.text)
+    except Exception as e:
+        return TrainingChatResponse(response=f"Error processing request: {str(e)}")

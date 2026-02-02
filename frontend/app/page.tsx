@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MoveRight } from "lucide-react";
+import { MoveRight, Github, Linkedin } from "lucide-react";
 import { SignUpButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 
 export default function LandingPage() {
@@ -70,7 +70,7 @@ export default function LandingPage() {
             <div className="flex items-center gap-6">
               <button className="hidden md:block text-sm font-medium hover:text-blue-400 transition-colors">Features</button>
               <button className="hidden md:block text-sm font-medium hover:text-blue-400 transition-colors">Developers</button>
-              
+
               {/* Login State in Nav */}
               <SignedOut>
                 <SignUpButton mode="modal">
@@ -105,7 +105,7 @@ export default function LandingPage() {
             </h1>
 
             <p className="reveal text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed">
-              Empowering farmers with real-time crop intelligence, localized weather 
+              Empowering farmers with real-time crop intelligence, localized weather
               analytics, and market predictions through a simple, multilingual interface.
             </p>
 
@@ -136,7 +136,7 @@ export default function LandingPage() {
               <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
               <div className="relative glass rounded-[2rem] p-2 overflow-hidden border-white/10">
                 <Image
-                  src="/KrishiPage.png" 
+                  src="/KrishiPage.png"
                   alt="App Interface"
                   width={900}
                   height={500}
@@ -147,31 +147,77 @@ export default function LandingPage() {
           </div>
         </section>
 
+
+
         {/* Developers Section */}
         <section className="py-32 px-6 relative">
           <div className="max-w-7xl mx-auto">
             <div className="reveal text-center mb-20">
-              <h2 className="text-4xl md:text-5xl font-bold mb-4">Architected by Team IIIT Bhagalpur</h2>
-              <div className="h-1.5 w-20 bg-blue-500 mx-auto rounded-full" />
+              <h2 className="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight text-white">
+                Architected by Team IIIT Bhagalpur
+              </h2>
+              <div className="h-1.5 w-24 bg-gradient-to-r from-blue-400 to-emerald-400 mx-auto rounded-full" />
             </div>
 
-            <div className="grid lg:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-2 gap-10 max-w-5xl mx-auto">
               {[
-                { name: "Saurabh Singh", role: "System Architect and Web Designing", initials: "SARS", desc: "Specializes in scalable backend systems and high-performance ML model integration." },
-                { name: "Nitesh Kumar Varma", role: "AI AND ML lead", initials: "NKV", desc: "Crafting intuitive digital experiences for users in diverse rural environments." }
+                {
+                  name: "Saurabh Singh",
+                  role: "Lead Architect & Full Stack",
+                  initials: "SS",
+                  desc: "Certified Backend Engineer. Migrated SQL/Prisma to MongoDB, integrated ML models, and ranked Top 160 on GFG.",
+
+                  github: "https://github.com/DevSars24",
+                  linkedin: "https://www.linkedin.com/in/saurabh-singh-25639a306"
+                },
+                {
+                  name: "Nitesh Kumar Varma",
+                  role: "AI/ML Lead",
+                  initials: "NKV",
+                  desc: "Expert in Agentic Chatbots and ML model development. Maintaining an 8.01 CGPA at IIIT Bhagalpur.",
+                  github: "https://github.com/niteshkumarvarma30",
+                  linkedin: "https://www.linkedin.com/in/niteshkumarvarmaa45"
+                }
               ].map((dev, i) => (
-                <div key={i} className="reveal group">
-                  <div className="h-full glass p-8 rounded-[2.5rem] border-white/5 hover:border-blue-500/50 transition-all duration-500 hover:-translate-y-2">
-                    <div className="flex flex-col items-center text-center">
-                      <div className="relative mb-6">
-                        <div className="absolute -inset-2 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-full blur opacity-40 group-hover:opacity-70 transition duration-500" />
-                        <Avatar className="h-20 w-20 border-2 border-white/10 relative">
-                          <AvatarFallback className="bg-[#0f172a] text-blue-400 font-bold text-xl">{dev.initials}</AvatarFallback>
+                <div key={i} className="reveal group h-full">
+                  <div className="h-full relative glass p-10 rounded-[3rem] border border-white/10 group-hover:border-blue-500/40 transition-all duration-500 hover:-translate-y-3 flex flex-col shadow-2xl">
+
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-[3rem] pointer-events-none" />
+
+                    <div className="flex flex-col items-center text-center relative z-10">
+                      <div className="relative mb-8">
+                        <div className="absolute -inset-4 bg-gradient-to-tr from-blue-600 to-emerald-500 rounded-full blur-lg opacity-20 group-hover:opacity-60 transition duration-500" />
+                        <Avatar className="h-28 w-28 border-2 border-white/20 relative">
+                          <AvatarFallback className="bg-[#0f172a] text-blue-400 font-black text-2xl">
+                            {dev.initials}
+                          </AvatarFallback>
                         </Avatar>
                       </div>
-                      <h3 className="text-xl font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">{dev.name}</h3>
-                      <p className="text-xs font-semibold uppercase tracking-widest text-blue-500/80 mb-4">{dev.role}</p>
-                      <p className="text-slate-400 text-sm leading-relaxed">{dev.desc}</p>
+
+                      <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
+                        {dev.name}
+                      </h3>
+                      <Badge variant="outline" className="mb-6 border-emerald-500/30 text-emerald-400 px-4 py-1 rounded-full bg-emerald-500/5">
+                        {dev.role}
+                      </Badge>
+
+                      <p className="text-slate-400 text-sm leading-relaxed mb-8 h-12">
+                        {dev.desc}
+                      </p>
+
+                      {/* Social Links */}
+                      <div className="flex gap-4 mb-8">
+                        <Link href={dev.github} target="_blank" className="p-3 glass rounded-full hover:bg-white/10 transition-colors">
+                          <Github className="h-5 w-5 text-slate-300" />
+                        </Link>
+                        <Link href={dev.linkedin} target="_blank" className="p-3 glass rounded-full hover:bg-white/10 transition-colors">
+                          <Linkedin className="h-5 w-5 text-slate-300" />
+                        </Link>
+                      </div>
+                    </div>
+
+                    <div className="mt-auto pt-6 border-t border-white/5 text-center">
+
                     </div>
                   </div>
                 </div>

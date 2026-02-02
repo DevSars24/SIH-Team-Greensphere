@@ -2,8 +2,10 @@
 
 import { ArrowLeft, GraduationCap } from "lucide-react";
 import Link from "next/link";
+import TrainingHub from "@/components/TrainingHub";
 
-export default function TrainingPage() {
+
+export default function KrishiVidyaPage() {
     return (
         <div className="min-h-screen bg-[#000000] text-slate-200 selection:bg-rose-500/30 overflow-x-hidden relative">
 
@@ -15,22 +17,14 @@ export default function TrainingPage() {
                 {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-16 gap-6">
                     <div>
-                        <Link href="/women-empowerment" className="group flex items-center gap-2 text-slate-500 hover:text-white transition-all mb-6">
+                        <Link href="/" className="group flex items-center gap-2 text-slate-500 hover:text-white transition-all mb-6">
                             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                            <span className="text-xs font-bold tracking-widest uppercase">Back to Hub</span>
+                            <span className="text-xs font-bold tracking-widest uppercase">Back to Home</span>
                         </Link>
                         <h1 className="text-4xl md:text-6xl font-bold text-white tracking-tight flex items-center gap-3">
-                            Krishi Vidya <GraduationCap className="w-8 h-8 md:w-12 md:h-12 text-rose-500" />
+                            Krishi Vidya Tutorials <GraduationCap className="w-8 h-8 md:w-12 md:h-12 text-rose-500" />
                         </h1>
-
-                        {/* Added note about new location */}
-                        <div className="mt-8 p-6 rounded-xl bg-rose-500/10 border border-rose-500/20 max-w-2xl">
-                            <h3 className="text-xl font-bold text-rose-400 mb-2">Training Has Moved</h3>
-                            <p className="text-slate-400 mb-6">The entrepreneurship program has moved to the dedicated Krishi Vidya Tutorials section.</p>
-                            <Link href="/krishi-vidya" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-rose-600 text-white font-bold hover:bg-rose-500 transition-colors">
-                                Go to Krishi Vidya Tutorials
-                            </Link>
-                        </div>
+                        <p className="text-slate-400 mt-2 text-lg">6-Week Entrepreneurship Program for Women Farmers</p>
                     </div>
 
                     {/* Partners Logos (Mock) */}
@@ -43,7 +37,12 @@ export default function TrainingPage() {
                     </div>
                 </div>
 
+                {/* Training Module */}
+                <TrainingHub />
+
             </div>
+
+
 
         </div>
     );

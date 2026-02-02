@@ -1,41 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { ArrowLeft, GraduationCap, HandCoins, Users2, Heart, Sparkles, MoveRight } from "lucide-react";
+import { ArrowLeft, GraduationCap, MoveRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import SchemesSection from "@/components/SchemesSection";
+import SHGNetwork from "@/components/SHGNetwork";
 
 export default function WomenFarmers() {
-  const resources = [
-    {
-      title: "Skill Training",
-      desc: "Modern farming techniques aur organic certification ke courses.",
-      icon: <GraduationCap className="w-6 h-6 text-rose-400" />,
-      color: "rgba(244, 63, 94, 0.15)",
-      link: "/women-empowerment/training"
-    },
-    {
-      title: "Financial Aid",
-      desc: "Mahila kisanon ke liye vishesh subsidies aur zero-interest loans.",
-      icon: <HandCoins className="w-6 h-6 text-rose-400" />,
-      color: "rgba(244, 63, 94, 0.15)",
-      link: "/women-empowerment/financial-aid"
-    },
-    {
-      title: "Self Help Groups",
-      desc: "Apne ilake ki mahilaon ke saath jud kar vyapar shuru karein.",
-      icon: <Users2 className="w-6 h-6 text-rose-400" />,
-      color: "rgba(244, 63, 94, 0.15)",
-      link: "/women-empowerment/shg"
-    },
-    {
-      title: "Government Schemes",
-      desc: "Sarkar ki taraf se milne wali suvidhayein aur labh.",
-      icon: <Heart className="w-6 h-6 text-rose-400" />,
-      color: "rgba(244, 63, 94, 0.15)",
-      link: "/women-empowerment/schemes"
-    }
-  ];
+
 
   return (
     <div className="min-h-screen bg-[#000000] text-slate-200 selection:bg-rose-500/30 overflow-hidden relative">
@@ -93,27 +66,15 @@ export default function WomenFarmers() {
           </motion.div>
         </div>
 
-        {/* Content Cards (Glassmorphism) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {resources.map((item, i) => (
-            <Link href={item.link} key={i} className="block group">
-              <motion.div
-                whileHover={{ y: -5 }}
-                className="p-8 rounded-[2rem] border border-white/5 bg-white/[0.02] backdrop-blur-xl hover:border-rose-500/30 transition-all h-full"
-              >
-                <div className="w-12 h-12 rounded-2xl bg-rose-500/10 flex items-center justify-center mb-6 group-hover:bg-rose-500 group-hover:text-black transition-all">
-                  {item.icon}
-                </div>
-                <h3 className="text-xl font-bold text-white mb-3">{item.title}</h3>
-                <p className="text-slate-500 text-sm leading-relaxed mb-6 group-hover:text-slate-300">
-                  {item.desc}
-                </p>
-                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-rose-400 opacity-0 group-hover:opacity-100 transition-all">
-                  Learn More <MoveRight className="w-3 h-3" />
-                </div>
-              </motion.div>
-            </Link>
-          ))}
+
+        {/* Schemes Section */}
+        <div id="schemes">
+          <SchemesSection />
+        </div>
+
+        {/* SHG Network Section */}
+        <div id="shg">
+          <SHGNetwork />
         </div>
 
         {/* Footer Info */}
