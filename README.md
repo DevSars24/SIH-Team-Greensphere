@@ -204,33 +204,6 @@ Instead of a simple Q&A, the agent will follow a diagnostic protocol:
 ---
 
 ## 🏗️ System Design for ML Integration
-
-```mermaid
-graph TD
-    A[User Frontend] -->|Chat/Image| B(FastAPI Backend)
-    B -->|Text Query| C{Gemini Agent}
-    
-    subgraph "Agent Toolbelt"
-        D[Market API Tool]
-        E[Weather API Tool]
-        F[ML Inference Tool]
-    end
-    
-    C -->|Decides to Call| F
-    
-    subgraph "ML Model Server"
-        G[Disease Detection Model (ONNX)]
-        H[Price Prediction Model (sklearn)]
-    end
-    
-    F -->|Input| G
-    F -->|Input| H
-    G -->|Prediction| F
-    H -->|Prediction| F
-    
-    F -->|Result| C
-    C -->|Final Response| B
-    B -->|Reply| A
 ```
 
 ## 📋 Implementation Checklist
