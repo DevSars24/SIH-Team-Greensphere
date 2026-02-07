@@ -20,7 +20,7 @@ from tools import (
 from database import client
 
 # Import Routers
-from routers import women_empowerment, crop_doctor, community, kisan_kendra
+from routers import women_empowerment, chat_service, community, kisan_kendra
 
 # ===============================
 # Load .env from backend folder
@@ -81,7 +81,7 @@ app.add_middleware(
 # Include Routers
 # ===============================
 app.include_router(women_empowerment.router)
-app.include_router(crop_doctor.router)
+app.include_router(chat_service.router)
 app.include_router(community.router)
 app.include_router(kisan_kendra.router)
 

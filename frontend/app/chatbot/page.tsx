@@ -4,268 +4,461 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Bot, Send, ArrowLeft, Loader2,
-  BookOpen, BarChart3, Cloud,
-  Shield, Sparkles, Mic, Paperclip, ChevronDown
+  Sparkles, Paperclip, X, Image as ImageIcon,
+  Menu, Plus, MessageSquare
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
+import AudioRecorder from "@/components/AudioRecorder";
 
 interface Message {
-  id: string;
+  role: "user" | "assistant";
   text: string;
-  sender: "user" | "bot";
-  timestamp: Date;
+  image?: string;
+  timestamp?: string;
+}
+
+interface Session {
+  session_id: string;
+  title: string;
+  last_updated: string;
 }
 
 export default function ChatbotPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      text: "Namaste! 🙏 I'm Krishi Sathi. I've analyzed your local soil data and current weather patterns. How can I help your farm thrive today?",
-      sender: "bot",
-      timestamp: new Date()
-    }
-  ]);
+  // State
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile sidebar toggle
 
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [language, setLanguage] = useState("Hindi");
+
+  // Refs
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const userId = "default_user";
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+  // --- Effects ---
+
+  // 1. Load Sessions on Mount
+  useEffect(() => {
+    fetchSessions();
+  }, []);
+
+  // 2. Scroll to bottom when messages change
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
+    setTimeout(scrollToBottom, 100);
   }, [messages, isLoading, scrollToBottom]);
 
+  // --- API Functions ---
+
+  const fetchSessions = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/chat/sessions/${userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSessions(data);
+        // If no current session, load the most recent one or create new
+        if (!currentSessionId && data.length > 0) {
+          loadSession(data[0].session_id);
+        } else if (data.length === 0) {
+          createNewSession();
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch sessions", err);
+    }
+  };
+
+  const createNewSession = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/chat/new`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId })
+      });
+      if (res.ok) {
+        const newSession = await res.json();
+        setSessions(prev => [newSession, ...prev]);
+        setCurrentSessionId(newSession.session_id);
+        setMessages([]); // Clear messages for new chat
+        setIsSidebarOpen(false); // Close sidebar on mobile
+      }
+    } catch (err) {
+      console.error("Failed to create session", err);
+    }
+  };
+
+  const loadSession = async (sessionId: string) => {
+    setCurrentSessionId(sessionId);
+    setIsSidebarOpen(false);
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/chat/history/${sessionId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(data.messages);
+      }
+    } catch (err) {
+      console.error("Failed to load session", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setImagePreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const clearImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleVoiceRecorded = async (audioBlob: Blob) => {
+    setIsLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", audioBlob, "voice_input.webm");
+
+      const res = await fetch(`${API_BASE_URL}/chat/transcribe`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setInputText(data.text);
+      }
+    } catch (err) {
+      console.error("Voice Error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSendMessage = async () => {
-    if (!inputText.trim() || isLoading) return;
-    const userMsg: Message = { id: Date.now().toString(), text: inputText, sender: "user", timestamp: new Date() };
-    setMessages(prev => [...prev, userMsg]);
-    const currentInput = inputText; // Store input for the request
+    if ((!inputText.trim() && !selectedImage) || isLoading || !currentSessionId) return;
+
+    let imageBase64 = null;
+    if (imagePreview) {
+      imageBase64 = imagePreview.split(",")[1];
+    }
+
+    const newUserMsg: Message = {
+      role: "user",
+      text: inputText,
+      image: imagePreview || undefined,
+      timestamp: new Date().toISOString()
+    };
+
+    setMessages(prev => [...prev, newUserMsg]);
+
+    // Payload
+    const payload = {
+      session_id: currentSessionId,
+      message: inputText || (selectedImage ? "[Image Uploaded]" : ""),
+      image: imageBase64,
+      language: language
+    };
+
     setInputText("");
+    clearImage();
     setIsLoading(true);
 
     try {
-      // Use environment variable or fallback to localhost for development
-      // In production, set NEXT_PUBLIC_API_URL to https://backend-xjfr.onrender.com
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-      const response = await fetch(`${API_BASE_URL}/chat`, {
+      const response = await fetch(`${API_BASE_URL}/chat/message`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message: currentInput }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch response");
-      }
-
+      if (!response.ok) throw new Error("Failed");
       const data = await response.json();
 
-      const botResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: data.response,
-        sender: "bot",
-        timestamp: new Date()
+      const botMsg: Message = {
+        role: "assistant",
+        text: data.content,
+        timestamp: new Date().toISOString()
       };
-      setMessages(prev => [...prev, botResponse]);
+      setMessages(prev => [...prev, botMsg]);
+
+      // Refresh sessions list to update "last_updated" or title
+      fetchSessions();
+
     } catch (error) {
-      console.error("Chat error:", error);
-      const errorResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: "Sorry, I'm having trouble connecting to the server. Please check if the backend is running.",
-        sender: "bot",
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorResponse]);
+      console.error("Chat Error:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-slate-200 selection:bg-emerald-500/30 font-sans pb-10">
+    <div className="flex h-screen bg-[#050505] text-slate-200 font-sans overflow-hidden">
 
-      {/* PEAK BACKGROUND */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <motion.div
-          animate={{ opacity: [0.1, 0.2, 0.1], scale: [1, 1.1, 1] }}
-          transition={{ duration: 10, repeat: Infinity }}
-          className="absolute top-[-10%] right-[-10%] w-[70%] h-[70%] bg-emerald-600/10 rounded-full blur-[120px]"
+      {/* MOBILE SIDEBAR OVERLAY */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/80 z-40 lg:hidden backdrop-blur-sm"
+          onClick={() => setIsSidebarOpen(false)}
         />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" />
-      </div>
+      )}
 
-      <div className="max-w-4xl mx-auto px-4 md:px-6 py-4 relative z-10">
+      {/* SIDEBAR */}
+      <aside className={`
+        fixed lg:static inset-y-0 left-0 z-50 w-[280px] bg-[#0a0a0a] border-r border-white/10 flex flex-col transition-transform duration-300
+        ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+      `}>
+        <div className="p-4 border-b border-white/10">
+          <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-white mb-6">
+            <ArrowLeft className="w-4 h-4" /> Back to Home
+          </Link>
+          <Button
+            onClick={createNewSession}
+            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white justify-start gap-2"
+          >
+            <Plus className="w-4 h-4" /> New Chat
+          </Button>
+        </div>
 
-        {/* MOBILE RESPONSIVE HEADER */}
-        <motion.header
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="sticky top-2 z-50 flex items-center justify-between p-3 mb-6 rounded-2xl bg-black/60 border border-white/10 backdrop-blur-xl"
-        >
+        <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+          <p className="px-2 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Recent</p>
+          {sessions.map(session => (
+            <button
+              key={session.session_id}
+              onClick={() => loadSession(session.session_id)}
+              className={`w-full text-left p-3 rounded-lg text-sm truncate transition-colors flex items-center gap-2
+                ${currentSessionId === session.session_id
+                  ? "bg-white/10 text-white border border-white/5"
+                  : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                }
+              `}
+            >
+              <MessageSquare className="w-4 h-4 shrink-0" />
+              <span className="truncate">{session.title}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="p-4 border-t border-white/10">
           <div className="flex items-center gap-3">
-            <Link href="/" className="p-2 hover:bg-white/10 rounded-full transition-colors">
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 flex items-center justify-center font-bold text-black text-xs">
+              KS
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">Krishi Sathi</p>
+              <p className="text-[10px] text-emerald-500">Pro Plan Active</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* MAIN CONTENT */}
+      <main className="flex-1 flex flex-col relative w-full h-full">
+
+        {/* HEADER */}
+        <header className="h-16 flex items-center justify-between px-4 border-b border-white/5 bg-black/60 backdrop-blur-md z-10">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-2 text-slate-400 hover:text-white"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-blue-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                <Bot className="w-6 h-6 text-white" />
+              <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-emerald-500/30">
+                <Image src="/kishanseva.png" alt="Bot" fill className="object-cover" />
               </div>
               <div>
-                <h1 className="text-sm md:text-base font-bold text-white">Krishi Sathi AI</h1>
-                <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest flex items-center gap-1">
+                <h1 className="font-bold text-white text-sm md:text-base">Krishi Sathi AI</h1>
+                <p className="text-[10px] text-emerald-500 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" /> Online
                 </p>
               </div>
             </div>
           </div>
-          <Button variant="ghost" size="sm" className="text-xs text-slate-400 hover:text-white">
-            History
-          </Button>
-        </motion.header>
 
-        {/* MAIN CONTENT: No longer fixed height, scrolls naturally */}
-        <div className="flex flex-col gap-6">
+          <select
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+            className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs text-slate-300 focus:outline-none focus:border-emerald-500"
+          >
+            <option value="English">English</option>
+            <option value="Hindi">Hindi (हिंदी)</option>
+            <option value="Marathi">Marathi (मराठी)</option>
+            <option value="Punjabi">Punjabi (ਪੰਜਾਬੀ)</option>
+          </select>
+        </header>
 
-          {/* CHAT BUBBLES CONTAINER */}
-          <div className="flex flex-col space-y-6 min-h-[400px]">
-            <AnimatePresence mode="popLayout">
-              {messages.map((message) => (
-                <motion.div
-                  key={message.id}
-                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  <div className={`max-w-[85%] md:max-w-[75%] px-4 py-3 rounded-2xl text-sm md:text-base leading-relaxed shadow-sm
-                    ${message.sender === "user"
-                      ? "bg-blue-600 text-white rounded-tr-none"
-                      : "bg-white/5 border border-white/10 backdrop-blur-sm rounded-tl-none"
+        {/* CHAT MESSAGES */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar relative">
+
+          {/* Welcome Screen if Empty */}
+          {messages.length === 0 && !isLoading && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 opacity-60">
+              <div className="w-24 h-24 relative mb-6 rounded-3xl overflow-hidden border border-emerald-500/20 shadow-[0_0_40px_rgba(16,185,129,0.1)]">
+                <Image src="/kishanseva.png" alt="Logo" fill className="object-cover" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">Namaste, Farmer Bhai! 🙏</h2>
+              <p className="text-slate-400 max-w-xs text-sm">
+                I can help you with crop diseases, weather updates, and market prices.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-8 w-full max-w-md">
+                {["Tomatoes have black spots", "Wheat mandi price today", "Best fertilizer for Rice", "Weather in Patna"].map(q => (
+                  <button
+                    key={q}
+                    onClick={() => { setInputText(q); }}
+                    className="p-3 bg-white/5 border border-white/10 rounded-xl text-xs text-slate-300 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all text-left"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <AnimatePresence>
+            {messages.map((msg, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div className={`flex items-start max-w-[85%] md:max-w-[70%] gap-3
+                   ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}
+                `}>
+                  {/* Avatar Icons */}
+                  <div className="shrink-0 w-8 h-8 rounded-full overflow-hidden border border-white/10 mt-1">
+                    {msg.role === "user" ? (
+                      <div className="w-full h-full bg-slate-700 flex items-center justify-center text-xs">U</div>
+                    ) : (
+                      <div className="w-full h-full relative">
+                        <Image src="/kishanseva.png" alt="Bot" fill className="object-cover" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className={`p-4 rounded-2xl shadow-sm
+                    ${msg.role === "user"
+                      ? "bg-emerald-600 text-white rounded-tr-none"
+                      : "bg-[#1a1a1a] border border-white/10 text-slate-200 rounded-tl-none"
                     }
                   `}>
-                    {message.sender === "bot" && <Sparkles className="w-3 h-3 text-emerald-400 mb-1" />}
-                    {message.text}
-                    <div className={`text-[9px] mt-1 opacity-50 ${message.sender === "user" ? "text-right" : "text-left"}`}>
-                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
+                    {msg.image && (
+                      <div className="mb-3 rounded-lg overflow-hidden border border-white/10 relative w-full aspect-video">
+                        <Image src={msg.image} alt="Upload" fill className="object-cover" />
+                      </div>
+                    )}
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                    <span className="text-[9px] opacity-40 mt-2 block w-full text-right">
+                      {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Just now"}
+                    </span>
                   </div>
-                </motion.div>
-              ))}
-
-              {isLoading && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-2 items-center text-emerald-500 pl-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-[10px] uppercase tracking-widest font-bold">Analyzing Soil Data...</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* STICKY INPUT AT BOTTOM */}
-          <div className="sticky bottom-4 z-50">
-            <div className="p-1.5 rounded-[2rem] bg-black/80 border border-white/10 backdrop-blur-2xl shadow-2xl">
-              <div className="flex items-center gap-1">
-                <Button size="icon" variant="ghost" className="rounded-full text-slate-400 hover:text-white shrink-0">
-                  <Paperclip className="w-5 h-5" />
-                </Button>
-                <input
-                  type="text"
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                  placeholder="Ask about crops or weather..."
-                  className="flex-1 bg-transparent border-none outline-none py-3 px-2 text-sm text-white placeholder:text-slate-500"
-                />
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!inputText.trim() || isLoading}
-                  className="rounded-full w-10 h-10 bg-emerald-500 hover:bg-emerald-400 text-black shrink-0 transition-transform active:scale-90"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-            {/* MOBILE QUICK TAGS */}
-            <div className="flex gap-2 mt-3 overflow-x-auto no-scrollbar py-1">
-              {["Weather Alert", "Tomato Prices", "Urea Subsidy"].map((tag) => (
-                <button key={tag} className="whitespace-nowrap px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] text-slate-300 hover:bg-emerald-500/20 hover:border-emerald-500/50 transition-all">
-                  {tag}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <hr className="border-white/5 my-4" />
-
-          {/* BENTO STATS: Stacks below chat on mobile, scrolls naturally */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <motion.div
-              whileInView={{ opacity: 1, scale: 1 }}
-              initial={{ opacity: 0, scale: 0.9 }}
-              className="p-5 rounded-3xl bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-2 bg-emerald-500/20 rounded-xl text-emerald-400">
-                  <Cloud className="w-5 h-5" />
                 </div>
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold">LIVE</span>
-              </div>
-              <h4 className="text-2xl font-bold text-white">28°C</h4>
-              <p className="text-xs text-slate-400">Mostly Sunny • Humidity 45%</p>
-              <p className="text-[10px] text-orange-400 mt-2 font-bold uppercase tracking-wider">⚠️ No rain expected for 4 days</p>
-            </motion.div>
-
-            <motion.div
-              whileInView={{ opacity: 1, scale: 1 }}
-              initial={{ opacity: 0, scale: 0.9 }}
-              className="p-5 rounded-3xl bg-white/[0.03] border border-white/10"
-            >
-              <div className="flex items-center gap-3 mb-4 text-purple-400">
-                <BarChart3 className="w-5 h-5" />
-                <span className="text-xs font-bold uppercase tracking-widest">Market Pulse</span>
-              </div>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-400">Wheat (Kanak)</span>
-                  <span className="text-emerald-400 font-bold">₹2,450 ↑</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-400">Mustard</span>
-                  <span className="text-red-400 font-bold">₹5,100 ↓</span>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* ADDITIONAL FEATURES LIST */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] px-1">Farmer Tools</h3>
-            {[
-              { icon: <Shield />, label: "Pest & Disease Diagnosis", color: "text-red-400" },
-              { icon: <BookOpen />, label: "Crop Knowledge Base", color: "text-blue-400" }
-            ].map((item, i) => (
-              <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <span className={item.color}>{item.icon}</span>
-                  <span className="text-sm font-medium">{item.label}</span>
-                </div>
-                <ChevronDown className="w-4 h-4 text-slate-600 -rotate-90" />
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </AnimatePresence>
 
+          {isLoading && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start pl-12">
+              <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-4 flex items-center gap-3">
+                <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
+                <span className="text-xs text-slate-400">Analyzing...</span>
+              </div>
+            </motion.div>
+          )}
+          <div ref={messagesEndRef} />
         </div>
 
-        {/* FOOTER */}
-        <footer className="mt-20 text-center opacity-30 text-[10px] uppercase tracking-widest">
-          Krishi Sathi AI • Secure Data Encryption • 2026
-        </footer>
-      </div>
+        {/* INPUT BAR */}
+        <div className="shrink-0 p-4 pt-2 bg-gradient-to-t from-black via-black/95 to-transparent z-20">
+          {/* Image Preview */}
+          <AnimatePresence>
+            {imagePreview && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                className="mb-3 ml-2 relative inline-block"
+              >
+                <div className="w-16 h-16 rounded-lg overflow-hidden border border-emerald-500 relative group">
+                  <Image src={imagePreview} alt="Preview" fill className="object-cover" />
+                  <button onClick={clearImage} className="absolute top-0 right-0 bg-black/60 p-1 text-white hover:bg-red-500 transition-colors">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="flex items-end gap-2 bg-[#1a1a1a] border border-white/10 rounded-[2rem] p-2 pl-4 focus-within:border-emerald-500/50 transition-colors shadow-lg">
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageSelect}
+              className="hidden"
+              accept="image/*"
+            />
+
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="p-2.5 rounded-full text-slate-400 hover:text-emerald-400 hover:bg-white/5 transition-colors"
+            >
+              <ImageIcon className="w-5 h-5" />
+            </button>
+
+            <AudioRecorder onRecordingComplete={handleVoiceRecorded} disabled={isLoading} />
+
+            <textarea
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              placeholder="Ask me anything..."
+              className="flex-1 bg-transparent border-none outline-none text-sm text-white placeholder:text-slate-500 py-3 max-h-[120px] resize-none overflow-y-auto custom-scrollbar"
+              rows={1}
+            />
+
+            <button
+              onClick={handleSendMessage}
+              disabled={(!inputText.trim() && !selectedImage) || isLoading}
+              className="p-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full transition-all disabled:opacity-50 disabled:grayscale transform active:scale-95"
+            >
+              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 ml-0.5" />}
+            </button>
+          </div>
+          <div className="text-center mt-2">
+            <p className="text-[10px] text-slate-600">
+              Krishi Sathi can make mistakes. Verify important info.
+            </p>
+          </div>
+        </div>
+
+      </main>
     </div>
   );
 }
