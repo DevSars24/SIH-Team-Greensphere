@@ -6,3 +6,6 @@ motor
 python-multipart
 livekit-api
 certifi
+huggingface_hub
+pypdf
+pillow

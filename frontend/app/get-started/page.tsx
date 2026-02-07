@@ -49,15 +49,7 @@ export default function GetStarted() {
       color: "rgba(234, 179, 8, 0.1)",
       link: "/academy"
     },
-    {
-      title: "Crop Doctor",
-      subtitle: "Disease Detection",
-      desc: "Upload images to diagnose plant health immediately with AI vision.",
-      icon: <Sprout className="w-5 h-5 text-emerald-400" />,
-      size: "md:col-span-2 col-span-1 row-span-1",
-      color: "rgba(16, 185, 129, 0.1)",
-      link: "/crop-doctor"
-    },
+
     {
       title: "Kisan Seva Kendra",
       subtitle: "Centers",

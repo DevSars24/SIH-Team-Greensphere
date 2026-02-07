@@ -126,9 +126,11 @@ export default function LandingPage() {
                 </Link>
               </SignedIn>
 
-              <Button size="lg" variant="outline" className="glass border-white/10 hover:bg-white/5 rounded-2xl px-8 h-14 font-semibold text-base transition-transform hover:scale-105">
-                How it works
-              </Button>
+              <Link href="#how-it-works">
+                <Button size="lg" variant="outline" className="glass border-white/10 hover:bg-white/5 rounded-2xl px-8 h-14 font-semibold text-base transition-transform hover:scale-105">
+                  How it works
+                </Button>
+              </Link>
             </div>
 
             {/* Hero Image */}
@@ -148,6 +150,58 @@ export default function LandingPage() {
         </section>
 
 
+
+
+        {/* How It Works Section */}
+        <section id="how-it-works" className="py-24 px-6 relative z-10">
+          <div className="max-w-7xl mx-auto">
+            <div className="reveal text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight bg-gradient-to-r from-blue-200 to-white bg-clip-text text-transparent">
+                How Krishi Mitra Works
+              </h2>
+              <p className="text-slate-400 text-lg">Your intelligent farming companion in 3 simple steps.</p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8 relative">
+              {[
+                {
+                  step: "01",
+                  title: "Ask or Upload",
+                  desc: "Use the Chatbot to ask questions in your language or upload a photo of your affected crop.",
+                  icon: "🗣️"
+                },
+                {
+                  step: "02",
+                  title: "AI Analysis",
+                  desc: "Our advanced Vision & Language models analyze the symptoms, soil data, and weather patterns instantly.",
+                  icon: "🧠"
+                },
+                {
+                  step: "03",
+                  title: "Actionable Solution",
+                  desc: "Receive immediate treatment plans, market prices, or government scheme details tailored for you.",
+                  icon: "✅"
+                }
+              ].map((item, i) => (
+                <div key={i} className="reveal group relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-emerald-500/5 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                  <div className="relative glass p-8 rounded-[2rem] border border-white/10 hover:border-blue-500/30 transition-all h-full">
+                    <div className="text-6xl font-black text-white/5 absolute top-4 right-6 pointer-events-none select-none">
+                      {item.step}
+                    </div>
+                    <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-3xl mb-6 shadow-lg shadow-black/50">
+                      {item.icon}
+                    </div>
+                    <h3 className="text-2xl font-bold text-white mb-4">{item.title}</h3>
+                    <p className="text-slate-400 leading-relaxed text-sm">
+                      {item.desc}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
         {/* Developers Section */}
         <section className="py-32 px-6 relative">
