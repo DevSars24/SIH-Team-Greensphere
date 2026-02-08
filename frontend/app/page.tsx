@@ -73,9 +73,6 @@ export default function LandingPage() {
               <button className="hidden md:block text-sm font-medium hover:text-blue-400 transition">
                 Platform
               </button>
-              <button className="hidden md:block text-sm font-medium hover:text-blue-400 transition">
-                Team
-              </button>
 
               <SignedOut>
                 <SignUpButton mode="modal">
@@ -108,24 +105,27 @@ export default function LandingPage() {
                 Built for Indian Farmers • Powered by AI
               </span>
             </div>
+            <h1 className="reveal text-6xl md:text-8xl font-black mb-8 leading-[1.25]">
+              <span className="bg-gradient-to-r from-slate-100 via-white to-slate-100 bg-clip-text text-transparent block">
+                Smarter Farming
+              </span>
 
-            <h1 className="reveal text-6xl md:text-8xl font-black mb-8">
-              Smarter Farming.
-              <br />
-              <span className="bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
-                Stronger Decisions.
+              <span className="bg-gradient-to-r from-blue-400 via-emerald-400 to-blue-400 bg-clip-text text-transparent animate-pulse block">
+                Stronger Decisions
               </span>
             </h1>
 
-            <p className="reveal text-lg text-slate-400 max-w-2xl mx-auto mb-12">
+
+
+            <p className="reveal text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-12 leading-relaxed">
               Krishi Mitra helps farmers make better decisions using AI — from crop
-              health and weather alerts to mandi prices and government schemes.
+              health and weather alerts to government schemes.
             </p>
 
             <div className="reveal flex justify-center gap-4 mb-20">
               <SignedOut>
                 <SignUpButton mode="modal">
-                  <Button size="lg" className="bg-white text-black rounded-2xl px-8">
+                  <Button size="lg" className="bg-gradient-to-r from-white to-slate-100 text-black hover:from-slate-100 hover:to-white rounded-2xl px-8 shadow-2xl shadow-white/20 font-semibold">
                     Start Using Krishi Mitra
                   </Button>
                 </SignUpButton>
@@ -133,16 +133,32 @@ export default function LandingPage() {
 
               <SignedIn>
                 <Link href="/get-started">
-                  <Button size="lg" className="bg-white text-black rounded-2xl px-8">
+                  <Button size="lg" className="bg-gradient-to-r from-white to-slate-100 text-black hover:from-slate-100 hover:to-white rounded-2xl px-8 shadow-2xl shadow-white/20 font-semibold">
                     Go to Dashboard <MoveRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
               </SignedIn>
 
               <Link href="#how-it-works">
-                <Button size="lg" variant="outline" className="rounded-2xl px-8">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="
+    rounded-2xl px-8
+    bg-transparent
+    border border-slate-600
+    text-slate-300
+    hover:border-blue-400
+    hover:text-blue-400
+    hover:bg-blue-500/10
+    focus:bg-transparent
+    active:bg-transparent
+    transition-all
+  "
+                >
                   See How It Works
                 </Button>
+
               </Link>
             </div>
 
@@ -160,96 +176,181 @@ export default function LandingPage() {
           </div>
         </section>
 
-       {/* How It Works Section */}
-<section id="how-it-works" className="py-28 px-6 relative">
-  <div className="max-w-7xl mx-auto">
+        {/* Quick Features Highlight */}
+        <section className="py-20 px-6 relative">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid md:grid-cols-3 gap-6">
 
-    {/* Heading */}
-    <div className="reveal text-center mb-20">
-      <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
-        How Krishi Mitra Works
-      </h2>
-      <p className="text-slate-400 max-w-2xl mx-auto text-lg">
-        Ask. Analyze. Act.  
-        Get accurate farming decisions powered by AI — in seconds.
-      </p>
-    </div>
+              {/* Feature 1 */}
+              <div className="reveal relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-br from-emerald-500/30 to-transparent rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-700" />
+                <div className="relative bg-black/50 backdrop-blur-xl border border-white/10 rounded-2xl p-8 hover:border-emerald-500/40 transition-all">
+                  <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-500">🌾</div>
+                  <h3 className="font-bold text-white mb-2 text-lg">Crop Health</h3>
+                  <p className="text-sm text-slate-400 leading-relaxed">AI-powered disease detection from photos. diagnosis in seconds.</p>
+                </div>
+              </div>
 
-    {/* Cards */}
-    <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              {/* Feature 2 */}
+              <div className="reveal relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-br from-blue-500/30 to-transparent rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-700" />
+                <div className="relative bg-black/50 backdrop-blur-xl border border-white/10 rounded-2xl p-8 hover:border-blue-500/40 transition-all">
+                  <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-500">🌤️</div>
+                  <h3 className="font-bold text-white mb-2 text-lg">Weather Alerts</h3>
+                  <p className="text-sm text-slate-400 leading-relaxed">Real-time forecasts & farming tips to plan your harvest.</p>
+                </div>
+              </div>
 
-      {/* Card 1 */}
-      <div className="reveal relative group">
-        <div className="absolute -inset-0.5 bg-gradient-to-br from-emerald-500/30 to-transparent rounded-3xl blur opacity-0 group-hover:opacity-100 transition duration-700" />
-        <div className="relative bg-black/60 backdrop-blur-xl border border-white/10 rounded-3xl p-10 h-full hover:border-emerald-500/40 transition-all">
+              {/* Feature 3 */}
+              <div className="reveal relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-br from-purple-500/30 to-transparent rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-700" />
+                <div className="relative bg-black/50 backdrop-blur-xl border border-white/10 rounded-2xl p-8 hover:border-purple-500/40 transition-all">
+                  <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-500">📋</div>
+                  <h3 className="font-bold text-white mb-2 text-lg">Govt Schemes</h3>
+                  <p className="text-sm text-slate-400 leading-relaxed">Eligibility checker & application help for subsidies.</p>
+                </div>
+              </div>
 
-          <div className="flex items-center justify-between mb-8">
-            <span className="text-sm tracking-widest text-emerald-400 font-semibold">
-              STEP 01
-            </span>
-            <span className="text-4xl">💬</span>
+            </div>
           </div>
+        </section>
 
-          <h3 className="text-2xl font-bold mb-4 text-white">
-            Ask Your Question
-          </h3>
+        {/* How It Works Section */}
+        <section id="how-it-works" className="py-28 px-6 relative">
+          <div className="max-w-7xl mx-auto">
 
-          <p className="text-slate-400 leading-relaxed">
-            Ask anything about crops, soil, weather, mandi prices,
-            or upload a photo for instant disease detection.
-          </p>
-        </div>
-      </div>
+            {/* Heading */}
+            <div className="reveal text-center mb-20">
+              <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
+                How Krishi Mitra Works
+              </h2>
+              <p className="text-slate-400 max-w-2xl mx-auto text-lg">
+                Ask. Analyze. Act.
+                Get accurate farming decisions powered by AI — in seconds.
+              </p>
+            </div>
 
-      {/* Card 2 */}
-      <div className="reveal relative group">
-        <div className="absolute -inset-0.5 bg-gradient-to-br from-blue-500/30 to-transparent rounded-3xl blur opacity-0 group-hover:opacity-100 transition duration-700" />
-        <div className="relative bg-black/60 backdrop-blur-xl border border-white/10 rounded-3xl p-10 h-full hover:border-blue-500/40 transition-all">
+            {/* Main Content - Image + Steps */}
+            <div className="grid lg:grid-cols-2 gap-16 items-center mb-20">
 
-          <div className="flex items-center justify-between mb-8">
-            <span className="text-sm tracking-widest text-blue-400 font-semibold">
-              STEP 02
-            </span>
-            <span className="text-4xl">🤖</span>
+              {/* Left: Visual Diagram */}
+              <div className="reveal order-2 lg:order-1">
+                <div className="relative group">
+                  {/* Glow effect */}
+                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/30 via-emerald-500/30 to-purple-500/30 rounded-3xl blur-2xl opacity-50 group-hover:opacity-75 transition duration-700" />
+
+                  {/* Image container */}
+                  <div className="relative glass rounded-3xl p-4 overflow-hidden">
+                    <div className="relative rounded-2xl overflow-hidden">
+                      <Image
+                        src="/how-it-works.png"
+                        alt="How Krishi Mitra Chatbot Works - Step by Step Guide"
+                        width={600}
+                        height={400}
+                        className="w-full h-auto transform group-hover:scale-105 transition duration-700"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Caption */}
+                <p className="text-center text-slate-400 mt-6 text-sm">
+                  💡 <span className="text-emerald-400 font-semibold">Interactive AI Chatbot</span> — Ask questions in your language, get instant expert advice
+                </p>
+              </div>
+
+              {/* Right: Step-by-step explanation */}
+              <div className="reveal order-1 lg:order-2 space-y-8">
+
+                {/* Step 1 */}
+                <div className="relative group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500/20 to-transparent rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500" />
+                  <div className="relative bg-black/40 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:border-emerald-500/40 transition-all">
+                    <div className="flex items-start gap-6">
+                      <div className="flex-shrink-0">
+                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 border border-emerald-500/30 flex items-center justify-center">
+                          <span className="text-2xl">💬</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs tracking-widest text-emerald-400 font-semibold mb-2">STEP 01</div>
+                        <h3 className="text-xl font-bold mb-3 text-white">Ask Your Question</h3>
+                        <p className="text-slate-400 leading-relaxed">
+                          Type or speak your farming question in Hindi, English, or your local language. Upload crop photos for disease detection.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Step 2 */}
+                <div className="relative group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-transparent rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500" />
+                  <div className="relative bg-black/40 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:border-blue-500/40 transition-all">
+                    <div className="flex items-start gap-6">
+                      <div className="flex-shrink-0">
+                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/20 border border-blue-500/30 flex items-center justify-center">
+                          <span className="text-2xl">🤖</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs tracking-widest text-blue-400 font-semibold mb-2">STEP 02</div>
+                        <h3 className="text-xl font-bold mb-3 text-white">AI Analyzes Context</h3>
+                        <p className="text-slate-400 leading-relaxed">
+                          Our AI processes your query with real-time weather data, soil info, and verified agricultural research.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Step 3 */}
+                <div className="relative group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-transparent rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500" />
+                  <div className="relative bg-black/40 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:border-purple-500/40 transition-all">
+                    <div className="flex items-start gap-6">
+                      <div className="flex-shrink-0">
+                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/20 border border-purple-500/30 flex items-center justify-center">
+                          <span className="text-2xl">✅</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs tracking-widest text-purple-400 font-semibold mb-2">STEP 03</div>
+                        <h3 className="text-xl font-bold mb-3 text-white">Get Expert Solutions</h3>
+                        <p className="text-slate-400 leading-relaxed">
+                          Receive actionable advice, treatment plans, scheme eligibility, and personalized recommendations instantly.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* Bottom CTA */}
+            <div className="reveal text-center">
+              <div className="inline-flex items-center gap-3 glass px-6 py-4 rounded-2xl">
+                <span className="text-slate-300">Ready to get started?</span>
+                <SignedOut>
+                  <SignUpButton mode="modal">
+                    <Button className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 rounded-xl px-6">
+                      Try Krishi Mitra Free
+                    </Button>
+                  </SignUpButton>
+                </SignedOut>
+                <SignedIn>
+                  <Link href="/get-started">
+                    <Button className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 rounded-xl px-6">
+                      Go to Dashboard <MoveRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </SignedIn>
+              </div>
+            </div>
+
           </div>
-
-          <h3 className="text-2xl font-bold mb-4 text-white">
-            AI Understands the Problem
-          </h3>
-
-          <p className="text-slate-400 leading-relaxed">
-            Our AI analyzes your query using real-time weather,
-            market data, and verified agricultural knowledge.
-          </p>
-        </div>
-      </div>
-
-      {/* Card 3 */}
-      <div className="reveal relative group">
-        <div className="absolute -inset-0.5 bg-gradient-to-br from-emerald-500/30 to-transparent rounded-3xl blur opacity-0 group-hover:opacity-100 transition duration-700" />
-        <div className="relative bg-black/60 backdrop-blur-xl border border-white/10 rounded-3xl p-10 h-full hover:border-emerald-500/40 transition-all">
-
-          <div className="flex items-center justify-between mb-8">
-            <span className="text-sm tracking-widest text-emerald-400 font-semibold">
-              STEP 03
-            </span>
-            <span className="text-4xl">✅</span>
-          </div>
-
-          <h3 className="text-2xl font-bold mb-4 text-white">
-            Get Actionable Solutions
-          </h3>
-
-          <p className="text-slate-400 leading-relaxed">
-            Receive step-by-step advice, remedies, price trends,
-            or government scheme details instantly.
-          </p>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
+        </section>
 
         {/* Developers */}
         <section className="py-32 px-6">
@@ -280,20 +381,20 @@ export default function LandingPage() {
                   linkedin: "https://www.linkedin.com/in/niteshkumarvarmaa45",
                 },
               ].map((dev, i) => (
-                <div key={i} className="reveal glass p-10 rounded-3xl">
-                  <Avatar className="h-24 w-24 mx-auto mb-6">
-                    <AvatarFallback className="text-xl font-bold">
+                <div key={i} className="reveal bg-black/40 backdrop-blur-xl border border-white/10 p-10 rounded-3xl hover:border-blue-500/40 transition-all group">
+                  <Avatar className="h-24 w-24 mx-auto mb-6 border-2 border-white/10 group-hover:border-blue-500/40 transition-all">
+                    <AvatarFallback className="text-xl font-bold bg-slate-950 text-slate-200">
                       {dev.initials}
                     </AvatarFallback>
                   </Avatar>
-                  <h3 className="text-xl font-bold">{dev.name}</h3>
-                  <Badge className="my-4">{dev.role}</Badge>
+                  <h3 className="text-xl font-bold text-slate-100">{dev.name}</h3>
+                  <Badge className="my-4 bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20">{dev.role}</Badge>
                   <p className="text-slate-400 mb-6">{dev.desc}</p>
                   <div className="flex justify-center gap-4">
-                    <Link href={dev.github} target="_blank">
+                    <Link href={dev.github} target="_blank" className="text-slate-400 hover:text-white transition-colors">
                       <Github />
                     </Link>
-                    <Link href={dev.linkedin} target="_blank">
+                    <Link href={dev.linkedin} target="_blank" className="text-slate-400 hover:text-white transition-colors">
                       <Linkedin />
                     </Link>
                   </div>
