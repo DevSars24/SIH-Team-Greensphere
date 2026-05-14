@@ -2,7 +2,7 @@ import os
 import uuid
 import base64
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Body
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Body, Response
 from pydantic import BaseModel
 from datetime import datetime
 from dotenv import load_dotenv
@@ -26,6 +26,7 @@ if not HF_TOKEN:
 LOGIC_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 VISION_MODEL = "Qwen/Qwen2.5-VL-7B-Instruct"
 STT_MODEL = "openai/whisper-large-v3-turbo"
+TTS_MODEL = "facebook/mms-tts-eng"
 
 # Clients
 client = InferenceClient(api_key=HF_TOKEN)
@@ -221,5 +222,15 @@ async def transcribe_voice(file: UploadFile = File(...)):
         audio_bytes = await file.read()
         output = audio_client.automatic_speech_recognition(audio_bytes, model=STT_MODEL)
         return {"text": output.text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/synthesize")
+async def synthesize_voice(text: str = Body(..., embed=True)):
+    if not text:
+        raise HTTPException(status_code=400, detail="No text provided")
+    try:
+        audio_bytes = client.text_to_speech(text, model=TTS_MODEL)
+        return Response(content=audio_bytes, media_type="audio/webm")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
