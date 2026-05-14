@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
   Bot, Send, ArrowLeft, Loader2,
   Sparkles, Paperclip, X, Image as ImageIcon,
-  Menu, Plus, MessageSquare
+  Menu, Plus, MessageSquare, Volume2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -172,7 +172,6 @@ export default function ChatbotPage() {
 
     setMessages(prev => [...prev, newUserMsg]);
 
-    // Payload
     const payload = {
       session_id: currentSessionId,
       message: inputText || (selectedImage ? "[Image Uploaded]" : ""),
@@ -201,13 +200,30 @@ export default function ChatbotPage() {
       };
       setMessages(prev => [...prev, botMsg]);
 
-      // Refresh sessions list to update "last_updated" or title
       fetchSessions();
 
     } catch (error) {
       console.error("Chat Error:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const playAudio = async (text: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/chat/synthesize`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audio.play();
+      }
+    } catch (err) {
+      console.error("Audio Play Error:", err);
     }
   };
 
@@ -369,9 +385,16 @@ export default function ChatbotPage() {
                       </div>
                     )}
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
-                    <span className="text-[9px] opacity-40 mt-2 block w-full text-right">
-                      {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Just now"}
-                    </span>
+                    <div className="flex justify-between items-center mt-2">
+                      {msg.role === "assistant" && (
+                        <button onClick={() => playAudio(msg.text)} className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-emerald-400 transition-colors">
+                          <Volume2 className="w-4 h-4" />
+                        </button>
+                      )}
+                      <span className="text-[9px] opacity-40 block w-full text-right">
+                        {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Just now"}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </motion.div>
