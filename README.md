@@ -1,213 +1,134 @@
+<div align="center">
+  <img src="https://raw.githubusercontent.com/saurabh-singh-rajput/Krishi-Mitra/main/frontend/public/kishanseva.png" alt="Krishi Mitra Logo" width="120" />
+  <h1>🌾 Krishi Mitra</h1>
+  <p><strong>Empowering Indian Farmers with Next-Gen Multimodal AI</strong></p>
 
-# 🌾 Krishi Mitra - Backend Architecture
+  <p>
+    <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js" />
+    <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+    <img src="https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" />
+    <img src="https://img.shields.io/badge/HuggingFace-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black" alt="HuggingFace" />
+    <img src="https://img.shields.io/badge/Gemini_AI-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Gemini" />
+  </p>
+</div>
+
+---
 
 ## 📋 Overview
-The backend is built with **FastAPI** and provides RESTful APIs for the Krishi Mitra agricultural platform. It features an **Agentic AI Chatbot** powered by Google's Gemini 2.5 Flash, MongoDB for data persistence, and specialized routers for different features.
+**Krishi Mitra** is a comprehensive, AI-powered agricultural platform designed specifically for Indian farmers. It bridges the technology gap by offering a fully localized, voice-activated, and multimodal AI assistant ("Krishi Sathi") that provides real-time farming advice, diagnoses crop diseases from images, and even generates visual agricultural concepts. 
+
+Beyond AI, the platform empowers rural communities with specialized tools for Women's Self-Help Groups (SHGs) and LiveKit-powered community video connections.
 
 ---
 
-## 🏗️ System Architecture
+## ✨ Key Features
 
-```
-backend/
-├── main.py                 # FastAPI app entry point
-├── database.py             # MongoDB connection setup
-├── tools.py                # Agentic AI tools (5 functions)
-├── requirements.txt        # Python dependencies
-├── .env                    # Environment variables (API keys)
-├── models/                 # Pydantic data models
-│   ├── chat.py            # Chat message models
-│   └── women_empowerment.py # Women empowerment models
-└── routers/               # API route handlers
-    ├── chat_service.py    # Chatbot API endpoints
-    ├── women_empowerment.py # Women farmer features
-    ├── community.py       # LiveKit community features
-    └── kisan_kendra.py    # Kisan Seva Kendra finder
-```
+### 🤖 Multimodal AI Chatbot (Krishi Sathi)
+- **🧠 Intelligent Advisories:** Powered by `Qwen 2.5` via Hugging Face for deep agricultural logic.
+- **👁️ Crop Disease Vision:** Upload images of diseased crops; the system falls back to **Google Gemini 2.5 Flash** to diagnose the issue and suggest remedies.
+- **🖼️ Text-to-Image Generation:** Ask the bot to draw a picture (e.g., "Draw a healthy wheat field") and it instantly generates gorgeous visuals using `FLUX.1-schnell`.
+- **🎙️ Voice-First Interaction:** 
+  - **Speech-to-Text:** Speak your queries natively using `openai/whisper-large-v3-turbo`.
+  - **Text-to-Speech:** The bot talks back in regional languages (Hindi, Marathi, Punjabi, English) with native accents using **Sarvam AI**.
 
----
+### 🌍 Context-Aware Intelligence
+- **📍 Geolocation Integration:** Automatically fetches the user's location via frontend browser APIs.
+- **🌤️ Live Weather Injection:** The LLM's system prompt is dynamically injected with real-time weather data (`Open-Meteo`) and location data (`BigDataCloud`), meaning the AI knows your local climate before it even answers!
 
-## 🔑 Environment Variables (`.env`)
-
-| Variable | Purpose | Example |
-|----------|---------|---------|
-| `GEMINI_API_KEY` | Google Gemini AI API key | `AIzaSy...` |
-| `MONGODB_URL` | MongoDB Atlas connection string | `mongodb+srv://...` |
-| `HF_TOKEN` | HuggingFace token (for ML models) | `hf_...` |
-| `LIVEKIT_URL` | LiveKit WebSocket URL | `wss://...` |
-| `LIVEKIT_API_KEY` | LiveKit API key | `API...` |
-| `LIVEKIT_API_SECRET` | LiveKit API secret | `BlVs...` |
+### 👩🏽‍🌾 Women Empowerment & Community
+- **SHG Registration:** Tools for women to form, register, and manage Self-Help Groups.
+- **Training Modules:** Dedicated pathways for agricultural upskilling.
+- **Live Video Community:** Real-time farmer-to-farmer communication powered by **LiveKit**.
 
 ---
 
-## 🧠 Core Components
+## 🛠️ Tech Stack
 
-### 1. **main.py** - Application Entry Point
-- **Framework**: FastAPI with async support
-- **CORS**: Configured for frontend (`allow_origins=["*"]`)
-- **Lifespan**: MongoDB connection management (startup/shutdown)
-- **Routers**: Includes 4 feature routers
-- **Agentic Chat**: `/chat` endpoint with automatic function calling
+### Frontend
+- **Framework:** Next.js 14 (App Router)
+- **Styling:** Tailwind CSS, Framer Motion (for smooth micro-animations)
+- **Components:** Radix UI / shadcn/ui
 
-**Key Endpoints:**
-- `GET /` - Health check
-- `POST /chat` - Agentic chatbot (legacy, use `/chat/message` instead)
-
----
-
-### 2. **database.py** - MongoDB Setup
-- **Driver**: Motor (async MongoDB driver)
-- **Database**: `krishi_mitra`
-- **SSL**: Uses `certifi` for TLS with `tlsAllowInvalidCertificates=True`
-- **Collections**: Managed by individual routers
+### Backend
+- **Framework:** FastAPI (Python)
+- **Database:** MongoDB (Async Motor Engine)
+- **AI/ML Integrations:** 
+  - Hugging Face Inference API (`Qwen`, `FLUX.1`, `Whisper`)
+  - Google Gemini API (`gemini-2.5-flash-lite` for vision)
+  - Sarvam AI API (for regional Indic Text-to-Speech)
+- **External APIs:** Open-Meteo, BigDataCloud
 
 ---
 
-### 3. **tools.py** - Agentic AI Tools (5 Functions)
-
-These are **function calling tools** that Gemini AI can invoke automatically:
-
-| Tool | Purpose | Parameters | Returns |
-|------|---------|------------|---------|
-| `get_market_price` | Fetch mandi prices | `crop_name`, `location` | Price, trend, message |
-| `get_government_schemes` | Find relevant schemes | `topic` | List of schemes with links |
-| `get_weather_forecast` | 3-day weather forecast | `location` | Forecast + alerts |
-| `recommend_crop` | Suggest best crops | `soil_type`, `season`, `location` | Crop recommendations |
-| `diagnose_crop_disease` | Identify diseases | `symptoms` | Diagnosis + remedy |
-
-**Example Tool Response:**
-```json
-{
-  "crop": "Wheat",
-  "location": "Punjab",
-  "price_per_quintal": 2350,
-  "trend": "up",
-  "message": "The current price of Wheat in Punjab is ₹2350/quintal. Trend is up ↑."
-}
-```
-
----
-
-## 🛣️ API Routers
-
-### 1. **chat_service.py** (`/chat/*`)
-Manages the AI chatbot with session-based conversations.
-
-**Endpoints:**
-- `POST /chat/new` - Create new chat session
-- `POST /chat/message` - Send message (with image support)
-- `POST /chat/transcribe` - Voice-to-text (Whisper API)
-- `GET /chat/sessions/{user_id}` - Get user's chat sessions
-- `GET /chat/history/{session_id}` - Get chat history
-
-**MongoDB Collection:** `chat_sessions`
-
-**Key Features:**
-- Session management with MongoDB
-- Image analysis (base64 upload)
-- Multilingual support (Hindi, English, Marathi, Punjabi)
-- Voice input transcription
-
----
-
-### 2. **women_empowerment.py** (`/women/*`)
-Features for women farmers.
-
-**Endpoints:**
-- `GET /women/schemes` - Government schemes for women
-- `GET /women/training` - 6-week training program structure
-- `POST /women/shg/register` - Register Self-Help Group
-- `GET /women/shg/list` - List all SHGs
-
-**MongoDB Collection:** `shg_registrations`
-
----
-
-### 3. **community.py** (`/community/*`)
-LiveKit-based video community features.
-
-**Endpoints:**
-- `POST /community/token` - Generate LiveKit access token
-
-**Integration:** LiveKit Cloud for real-time video/audio
-
----
-
-### 4. **kisan_kendra.py** (`/kisan-kendra/*`)
-Find nearby Kisan Seva Kendras.
-
-**Endpoints:**
-- `GET /kisan-kendra/nearby` - Get nearby centers (mock data)
-
----
-
-## 🤖 Agentic AI Configuration
-
-**Model:** `gemini-2.5-flash-lite`
-
-**System Instruction:**
-```
-You are 'Krishi Sathi', an expert AI agricultural advisor for Indian farmers.
-- Multilingual: Respond in user's language
-- Empathetic: Use respectful language
-- Data-Driven: Use tools for real data
-- Actionable: Give step-by-step advice
-```
-
-**Generation Config:**
-- `temperature`: 0.4 (factual responses)
-- `max_output_tokens`: 8192
-- `enable_automatic_function_calling`: True
-
----
-
-## 📦 Dependencies (`requirements.txt`)
-
-```txt
-fastapi
-uvicorn
-motor                # Async MongoDB driver
-google-generativeai  # Gemini AI SDK
-python-dotenv
-certifi
-pydantic
-livekit              # Community video
-```
-
----
-
-## 🚀 Running the Backend
-
-### 1. Install Dependencies
-```bash
-cd backend
-pip install -r requirements.txt
-```
-
-### 2. Configure Environment
-Create `.env` file with required API keys (see table above).
-
-### 3. Start Server
-```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
-**Server runs on:** `http://localhost:8000`
-
----
-
-## 🔗 API Integration Flow
+## 🏗️ Architecture Flow
 
 ```mermaid
 graph LR
-    A[Frontend] -->|HTTP Request| B[FastAPI Backend]
-    B -->|Query| C[MongoDB]
-    B -->|AI Request| D[Gemini AI]
-    D -->|Function Call| E[Tools]
-    E -->|Data| D
-    D -->|Response| B
-    B -->|JSON| A
+    A[Frontend UI / Voice Input] -->|HTTPS POST| B[FastAPI Backend]
+    B --> C{Request Type}
+    
+    C -->|Voice Input| D[Whisper STT]
+    C -->|Image Upload| E[Gemini Vision]
+    C -->|Image Gen Request| F[FLUX.1-schnell]
+    C -->|Text Query| G[Qwen Logic Model]
+    
+    B -->|Context Fetch| H[Weather / Location APIs]
+    H --> G
+    
+    D --> G
+    E --> B
+    F --> B
+    G --> I[Sarvam AI TTS]
+    I --> B
+    B -->|JSON + Audio Blob| A
 ```
+
+---
+
+## 🚀 Getting Started
+
+### 1. Prerequisites
+- Node.js (v18+)
+- Python (v3.10+)
+- MongoDB Atlas Account
+- API Keys: Hugging Face, Gemini, Sarvam AI, LiveKit
+
+### 2. Environment Variables
+Create a `.env` file in the **`backend`** directory:
+```ini
+GEMINI_API_KEY="your_google_gemini_key"
+MONGODB_URL="your_mongodb_connection_string"
+HF_TOKEN="your_huggingface_token"
+SARVAM_API_KEY="your_sarvam_ai_key"
+LIVEKIT_URL="your_livekit_wss_url"
+LIVEKIT_API_KEY="your_livekit_key"
+LIVEKIT_API_SECRET="your_livekit_secret"
+```
+
+Create a `.env.local` file in the **`frontend`** directory:
+```ini
+NEXT_PUBLIC_API_URL="http://localhost:8000"
+```
+
+### 3. Installation
+
+**Backend Setup:**
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+**Frontend Setup:**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The application will be running at `http://localhost:3000`.
 
 ---
 
@@ -215,63 +136,29 @@ graph LR
 
 | Collection | Purpose | Key Fields |
 |------------|---------|------------|
-| `chat_sessions` | Store chat history | `session_id`, `user_id`, `messages[]`, `title` |
-| `shg_registrations` | SHG registrations | `group_name`, `leader_name`, `location`, `members` |
+| `chat_sessions` | Stores contextual chat history | `session_id`, `user_id`, `messages[]`, `title` |
+| `shg_registrations` | Women's SHG registrations | `group_name`, `leader_name`, `location`, `members` |
 
 ---
 
-## 🔒 Security Notes
+## 📝 API Response Example (Chat)
 
-- **CORS**: Currently set to `allow_origins=["*"]` for development. **Restrict in production.**
-- **API Keys**: Never commit `.env` to Git. Use `.gitignore`.
-- **MongoDB**: Uses TLS with `tlsAllowInvalidCertificates=True` (for development).
-
----
-
-## 📝 API Response Format
-
-All endpoints return JSON:
-
-**Success:**
 ```json
 {
-  "status": "success",
-  "data": { ... }
-}
-```
-
-**Error:**
-```json
-{
-  "detail": "Error message"
+  "role": "assistant",
+  "content": "यहाँ आपके लिए गेहूं के खेत का चित्र है।",
+  "image": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ..."
 }
 ```
 
 ---
 
-## 🧪 Testing
+## 🤝 Built With ❤️ By
 
-**Health Check:**
-```bash
-curl http://localhost:8000/
-```
+**Team IIIT Bhagalpur**
+- Saurabh Singh Rajput 
 
-**Chat Test:**
-```bash
-curl -X POST http://localhost:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message": "What is the price of wheat in Punjab?"}'
-```
+<p align="center">
+  <i>Empowering agriculture through technology.</i>
+</p>
 
----
-
-## 📚 Additional Resources
-
-- [FastAPI Docs](https://fastapi.tiangolo.com/)
-- [Gemini AI Function Calling](https://ai.google.dev/docs/function_calling)
-- [Motor (Async MongoDB)](https://motor.readthedocs.io/)
-- [LiveKit Docs](https://docs.livekit.io/)
-
----
-
-**Built with ❤️ by Team IIIT Bhagalpur (saurabh singh rajput && Nitesh kumar Verma)**
