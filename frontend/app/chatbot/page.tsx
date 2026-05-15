@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
   Bot, Send, ArrowLeft, Loader2,
   Sparkles, Paperclip, X, Image as ImageIcon,
-  Menu, Plus, MessageSquare, Volume2
+  Menu, Plus, MessageSquare, Volume2, Square
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -37,19 +37,29 @@ export default function ChatbotPage() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [language, setLanguage] = useState("Hindi");
+  const [location, setLocation] = useState<{lat: number, lon: number} | null>(null);
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  
+  const [playingMessageIndex, setPlayingMessageIndex] = useState<number | null>(null);
 
   const userId = "default_user";
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
   // --- Effects ---
 
-  // 1. Load Sessions on Mount
+  // 1. Load Sessions on Mount and Get Geolocation
   useEffect(() => {
     fetchSessions();
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => setLocation({ lat: position.coords.latitude, lon: position.coords.longitude }),
+        (error) => console.log("Geolocation error:", error)
+      );
+    }
   }, []);
 
   // 2. Scroll to bottom when messages change
@@ -147,16 +157,22 @@ export default function ChatbotPage() {
       if (res.ok) {
         const data = await res.json();
         setInputText(data.text);
+        // Auto-send the transcribed voice message
+        handleSendMessage(data.text, true);
       }
     } catch (err) {
       console.error("Voice Error:", err);
     } finally {
+      // Don't set isLoading(false) if we are auto-sending, it will be handled by handleSendMessage
+      // But if it failed, we should set it to false.
+      // We rely on handleSendMessage to set it to true again.
       setIsLoading(false);
     }
   };
 
-  const handleSendMessage = async () => {
-    if ((!inputText.trim() && !selectedImage) || isLoading || !currentSessionId) return;
+  const handleSendMessage = async (overrideText?: string, isVoice: boolean = false) => {
+    const textToSend = overrideText || inputText;
+    if ((!textToSend.trim() && !selectedImage) || isLoading || !currentSessionId) return;
 
     let imageBase64 = null;
     if (imagePreview) {
@@ -165,7 +181,7 @@ export default function ChatbotPage() {
 
     const newUserMsg: Message = {
       role: "user",
-      text: inputText,
+      text: textToSend,
       image: imagePreview || undefined,
       timestamp: new Date().toISOString()
     };
@@ -174,12 +190,16 @@ export default function ChatbotPage() {
 
     const payload = {
       session_id: currentSessionId,
-      message: inputText || (selectedImage ? "[Image Uploaded]" : ""),
+      message: textToSend || (selectedImage ? "[Image Uploaded]" : ""),
       image: imageBase64,
-      language: language
+      language: language,
+      latitude: location?.lat,
+      longitude: location?.lon
     };
 
-    setInputText("");
+    if (!overrideText) {
+      setInputText("");
+    }
     clearImage();
     setIsLoading(true);
 
@@ -196,11 +216,17 @@ export default function ChatbotPage() {
       const botMsg: Message = {
         role: "assistant",
         text: data.content,
+        image: data.image,
         timestamp: new Date().toISOString()
       };
       setMessages(prev => [...prev, botMsg]);
 
       fetchSessions();
+
+      if (isVoice) {
+        // Auto-play for the last index
+        toggleAudio(data.content, messages.length);
+      }
 
     } catch (error) {
       console.error("Chat Error:", error);
@@ -209,21 +235,51 @@ export default function ChatbotPage() {
     }
   };
 
-  const playAudio = async (text: string) => {
+  const toggleAudio = async (text: string, index: number) => {
+    if (playingMessageIndex === index && currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current.currentTime = 0;
+      setPlayingMessageIndex(null);
+      currentAudioRef.current = null;
+      return;
+    }
+
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current.currentTime = 0;
+    }
+
+    setPlayingMessageIndex(index);
+
     try {
+      const sarvamLangMap: Record<string, string> = {
+        "English": "en-IN",
+        "Hindi": "hi-IN",
+        "Marathi": "mr-IN",
+        "Punjabi": "pa-IN"
+      };
       const response = await fetch(`${API_BASE_URL}/chat/synthesize`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, target_language_code: sarvamLangMap[language] || "hi-IN" }),
       });
       if (response.ok) {
         const audioBlob = await response.blob();
         const audioUrl = URL.createObjectURL(audioBlob);
         const audio = new Audio(audioUrl);
+        audio.onended = () => {
+          if (playingMessageIndex === index) {
+            setPlayingMessageIndex(null);
+          }
+        };
+        currentAudioRef.current = audio;
         audio.play();
+      } else {
+        setPlayingMessageIndex(null);
       }
     } catch (err) {
       console.error("Audio Play Error:", err);
+      setPlayingMessageIndex(null);
     }
   };
 
@@ -387,8 +443,8 @@ export default function ChatbotPage() {
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
                     <div className="flex justify-between items-center mt-2">
                       {msg.role === "assistant" && (
-                        <button onClick={() => playAudio(msg.text)} className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-emerald-400 transition-colors">
-                          <Volume2 className="w-4 h-4" />
+                        <button onClick={() => toggleAudio(msg.text, index)} className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-emerald-400 transition-colors">
+                          {playingMessageIndex === index ? <Square className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4" />}
                         </button>
                       )}
                       <span className="text-[9px] opacity-40 block w-full text-right">
@@ -467,7 +523,7 @@ export default function ChatbotPage() {
             />
 
             <button
-              onClick={handleSendMessage}
+              onClick={() => handleSendMessage()}
               disabled={(!inputText.trim() && !selectedImage) || isLoading}
               className="p-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full transition-all disabled:opacity-50 disabled:grayscale transform active:scale-95"
             >

@@ -9,3 +9,9 @@ certifi
 huggingface_hub
 pypdf
 pillow
+requests
+sarvamai
+torch
+diffusers
+transformers
+accelerate
