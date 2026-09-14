@@ -2,8 +2,13 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import asyncio
 import os
 import certifi
+import dns.resolver
 from dotenv import load_dotenv
 from pymongo.errors import OperationFailure
+
+# Configure public DNS for MongoDB SRV resolution on Windows
+dns.resolver.default_resolver = dns.resolver.Resolver(configure=False)
+dns.resolver.default_resolver.nameservers = ['8.8.8.8', '1.1.1.1']
 
 load_dotenv("backend/.env")
 

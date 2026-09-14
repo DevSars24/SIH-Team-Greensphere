@@ -13,11 +13,12 @@ import {
 import { useEffect, useState } from "react";
 import { Track } from "livekit-client";
 import { ArrowLeft, Loader2, Users } from "lucide-react";
-import Link from "next/link";
 import { motion } from "framer-motion";
+import Link from "next/link";
+import { API_BASE_URL, LIVEKIT_URL } from "@/lib/config";
 
 export default function CommunityPage() {
-    const [room, setRoom] = useState("krishi-charha");
+    const [room, setRoom] = useState("krishi-charcha");
     const [name, setName] = useState("");
     const [token, setToken] = useState("");
     const [joined, setJoined] = useState(false);
@@ -26,7 +27,7 @@ export default function CommunityPage() {
         if (!name) return;
         try {
             const resp = await fetch(
-                `http://localhost:8000/community/token?room=${room}&username=${name}`
+                `${API_BASE_URL}/community/token?room=${room}&username=${name}`
             );
             if (!resp.ok) {
                 console.error("Failed to fetch token");

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Wallet, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { API_BASE_URL } from "@/lib/config";
 
 interface FinancialAid {
     title: string;
@@ -21,7 +22,7 @@ export default function FinancialAidPage() {
     useEffect(() => {
         async function fetchAid() {
             try {
-                const res = await fetch("http://localhost:8000/women/financial-aid");
+                const res = await fetch(`${API_BASE_URL}/women/financial-aid`);
                 if (res.ok) {
                     const data = await res.json();
                     setAids(data);

@@ -20,7 +20,7 @@ from tools import (
 from database import client
 
 # Import Routers
-from routers import women_empowerment, chat_service, community, kisan_kendra
+from routers import women_empowerment, chat_service, community, kisan_kendra, mandi
 
 # ===============================
 # Load .env from backend folder
@@ -42,23 +42,31 @@ if api_key:
     genai.configure(api_key=api_key)
 
 # ===============================
+import sys
+
+try:
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
+except Exception:
+    pass
+
+# ===============================
 # Lifecycle Manager (MongoDB)
 # ===============================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    print("🚀 Connecting to MongoDB...")
-    # Trigger connection (optional check)
+    print("[INIT] Connecting to MongoDB Atlas...")
     try:
         await client.admin.command('ping')
-        print("✅ MongoDB Connected!")
+        print("[SUCCESS] MongoDB Connected successfully!")
     except Exception as e:
-        print(f"❌ MongoDB Connection Failed: {e}")
+        print(f"[ERROR] MongoDB Connection Failed: {e}")
     
     yield
     
     # Shutdown
-    print("🛑 Closing MongoDB Connection...")
+    print("[SHUTDOWN] Closing MongoDB Connection...")
     client.close()
 
 # ===============================
@@ -84,6 +92,7 @@ app.include_router(women_empowerment.router)
 app.include_router(chat_service.router)
 app.include_router(community.router)
 app.include_router(kisan_kendra.router)
+app.include_router(mandi.router)
 
 # ===============================
 # Gemini Model Config (Agentic)
@@ -140,7 +149,7 @@ class ChatResponse(BaseModel):
 async def health_check():
     return {
         "status": "ok",
-        "message": "🚀 Gemini Agentic Chatbot running"
+        "message": "Krishi Mitra Backend & Gemini Agentic Chatbot running"
     }
 
 # ===============================

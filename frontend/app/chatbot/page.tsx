@@ -230,6 +230,12 @@ export default function ChatbotPage() {
 
     } catch (error) {
       console.error("Chat Error:", error);
+      const errorMsg: Message = {
+        role: "assistant",
+        text: "माफ़ करें, नेटवर्क या सर्ver में समस्या के कारण उत्तर नहीं मिल सका। कृपया पुनः प्रयास करें।",
+        timestamp: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsLoading(false);
     }
@@ -273,7 +279,10 @@ export default function ChatbotPage() {
           }
         };
         currentAudioRef.current = audio;
-        audio.play();
+        audio.play().catch((err) => {
+          console.log("Audio playback interrupted:", err);
+          setPlayingMessageIndex(null);
+        });
       } else {
         setPlayingMessageIndex(null);
       }

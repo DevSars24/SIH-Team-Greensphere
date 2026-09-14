@@ -5,12 +5,14 @@ import { ArrowLeft, ExternalLink, Loader2, Landmark } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
+import { API_BASE_URL } from "@/lib/config";
+
 interface Scheme {
     title: string;
     description: string;
     eligibility: string;
     benefits: string;
-    application_link?: string;
+    application_link: string;
 }
 
 export default function SchemesPage() {
@@ -20,7 +22,7 @@ export default function SchemesPage() {
     useEffect(() => {
         async function fetchSchemes() {
             try {
-                const res = await fetch("http://localhost:8000/women/schemes");
+                const res = await fetch(`${API_BASE_URL}/women/schemes`);
                 if (res.ok) {
                     const data = await res.json();
                     setSchemes(data);

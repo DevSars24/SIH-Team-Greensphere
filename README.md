@@ -103,6 +103,8 @@ SARVAM_API_KEY="your_sarvam_ai_key"
 LIVEKIT_URL="your_livekit_wss_url"
 LIVEKIT_API_KEY="your_livekit_key"
 LIVEKIT_API_SECRET="your_livekit_secret"
+OPENWEATHER_API_KEY="your_openweather_api_key"
+DATA_GOV_API_KEY="your_data_gov_api_key"
 ```
 
 Create a `.env.local` file in the **`frontend`** directory:

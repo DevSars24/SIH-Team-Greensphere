@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Users, Phone, MapPin } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { API_BASE_URL } from "@/lib/config";
 
 interface SHG {
     name: string;
@@ -11,7 +12,7 @@ interface SHG {
     members_count: number;
     focus_area: string;
     contact_person: string;
-    contact_number?: string;
+    contact_number: string;
 }
 
 export default function SHGPage() {
@@ -21,7 +22,7 @@ export default function SHGPage() {
     useEffect(() => {
         async function fetchSHGs() {
             try {
-                const res = await fetch("http://localhost:8000/women/shgs");
+                const res = await fetch(`${API_BASE_URL}/women/shgs`);
                 if (res.ok) {
                     const data = await res.json();
                     setShgs(data);

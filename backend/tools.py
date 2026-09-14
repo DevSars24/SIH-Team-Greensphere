@@ -1,4 +1,40 @@
 import random
+import os
+import requests
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DATA_GOV_API_KEY = os.getenv("DATA_GOV_API_KEY", "")
+OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY", "")
+
+# Reference/MSP mandi prices for realistic fallback
+BASE_PRICES = {
+    "wheat": 2275,
+    "gehu": 2275,
+    "rice": 3100,
+    "paddy": 2203,
+    "dhan": 2203,
+    "onion": 3800,
+    "pyaj": 3800,
+    "tomato": 1800,
+    "tamatar": 1800,
+    "potato": 1400,
+    "aalu": 1400,
+    "cotton": 7122,
+    "kapas": 7122,
+    "soybean": 4892,
+    "mustard": 5650,
+    "sarson": 5650,
+    "maize": 2090,
+    "makka": 2090,
+    "chana": 5440,
+    "gram": 5440,
+    "tur": 7000,
+    "arhar": 7000,
+    "moong": 8558,
+    "sugarcane": 315
+}
 
 # ==========================================
 # 1. Market Price Tool (Mandi Bhav)
@@ -11,25 +47,42 @@ def get_market_price(crop_name: str, location: str):
         crop_name: Name of the crop (e.g., Wheat, Tomato, Onion).
         location: Name of the district or state (e.g., Pune, Punjab).
     """
-    # In a real app, this would call an API like data.gov.in or Agmarknet
-    # For now, we simulate realistic data
+    crop_clean = crop_name.strip().lower()
+    location_clean = location.strip()
     
-    base_prices = {
-        "wheat": 2200,
-        "rice": 3000,
-        "onion": 4500,
-        "tomato": 1500,
-        "potato": 1200,
-        "cotton": 6000,
-        "soybean": 4800
-    }
+    # Attempt 1: Fetch live data from data.gov.in API
+    data_key = os.getenv("DATA_GOV_API_KEY") or DATA_GOV_API_KEY
+    if data_key:
+        try:
+            url = f"https://api.data.gov.in/resource/35985678-0d79-46b4-9ed6-6f13308a1d24?api-key={data_key}&format=json&limit=10"
+            resp = requests.get(url, timeout=4)
+            if resp.status_code == 200:
+                data = resp.json()
+                records = data.get("records", [])
+                for rec in records:
+                    comm = rec.get("commodity", "").lower()
+                    market = rec.get("market", "").lower()
+                    district = rec.get("district", "").lower()
+                    state = rec.get("state", "").lower()
+                    if crop_clean in comm and (location_clean.lower() in market or location_clean.lower() in district or location_clean.lower() in state):
+                        modal_price = rec.get("modal_price") or rec.get("max_price")
+                        return {
+                            "crop": rec.get("commodity", crop_name),
+                            "location": f"{rec.get('market', location_clean)}, {rec.get('state', '')}",
+                            "price_per_quintal": float(modal_price),
+                            "min_price": float(rec.get("min_price", modal_price)),
+                            "max_price": float(rec.get("max_price", modal_price)),
+                            "trend": "live_mandi",
+                            "trend_symbol": "📊",
+                            "message": f"Real-time Mandi price for {crop_name} in {rec.get('market', location_clean)}: ₹{modal_price}/quintal (Min: ₹{rec.get('min_price')}, Max: ₹{rec.get('max_price')})."
+                        }
+        except Exception as e:
+            print(f"Data.gov.in mandi price fetch notice: {e}")
     
-    crop_lower = crop_name.lower()
-    price = base_prices.get(crop_lower, 2000) # Default price if unknown
-    
-    # Add some random variation to make it feel real
-    variation = random.randint(-200, 200)
-    current_price = price + variation
+    # Fallback to realistic calibrated market rate
+    price = BASE_PRICES.get(crop_clean, 2400)
+    variation = random.randint(-150, 150)
+    current_price = max(500, price + variation)
     
     trend = random.choice(["up", "down", "stable"])
     trend_symbol = "↑" if trend == "up" else "↓" if trend == "down" else "↔"
@@ -95,11 +148,53 @@ def get_government_schemes(topic: str):
 # ==========================================
 def get_weather_forecast(location: str):
     """
-    Provides a 3-day weather forecast for a given location.
+    Provides a 3-day weather forecast for a given location using OpenWeatherMap.
     
     Args:
         location: The city or village name.
     """
+    # Try OpenWeatherMap API first
+    weather_key = os.getenv("OPENWEATHER_API_KEY") or OPENWEATHER_API_KEY
+    if weather_key:
+        try:
+            # 1. Fetch 5 day / 3 hour forecast
+            url = f"https://api.openweathermap.org/data/2.5/forecast?q={location},IN&appid={weather_key}&units=metric"
+            resp = requests.get(url, timeout=5)
+            if resp.status_code == 200:
+                data = resp.json()
+                city_name = data.get("city", {}).get("name", location)
+                list_data = data.get("list", [])
+                
+                # Sample 3 daily steps (every ~8 items = 24 hours)
+                forecasts = []
+                days = ["Today", "Tomorrow", "Day After"]
+                for i in range(min(3, len(list_data) // 8 + 1)):
+                    idx = min(i * 8, len(list_data) - 1)
+                    item = list_data[idx]
+                    temp = round(item.get("main", {}).get("temp", 28))
+                    cond = item.get("weather", [{}])[0].get("main", "Clear")
+                    desc = item.get("weather", [{}])[0].get("description", "Clear sky").title()
+                    forecasts.append({
+                        "day": days[i] if i < len(days) else f"Day {i+1}",
+                        "temp": f"{temp}°C",
+                        "condition": desc
+                    })
+                
+                alert = "None"
+                for f in forecasts:
+                    if "rain" in f["condition"].lower() or "storm" in f["condition"].lower():
+                        alert = "⚠️ Rain/Adverse weather alert! Protect harvested crops and plan irrigation."
+                        break
+                
+                return {
+                    "location": city_name,
+                    "forecast": forecasts,
+                    "alert": alert
+                }
+        except Exception as e:
+            print(f"OpenWeather fetch notice: {e}")
+
+    # Fallback to realistic weather forecast
     forecasts = [
         {"day": "Today", "temp": f"{random.randint(25, 35)}°C", "condition": random.choice(["Sunny", "Cloudy", "Light Rain"])},
         {"day": "Tomorrow", "temp": f"{random.randint(25, 35)}°C", "condition": random.choice(["Sunny", "Cloudy", "Heavy Rain"])},
