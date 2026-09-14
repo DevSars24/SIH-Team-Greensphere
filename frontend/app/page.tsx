@@ -391,7 +391,7 @@ export default function LandingPage() {
               Designed and engineered by Team IIIT Bhagalpur
             </p>
 
-            <div className="grid md:grid-cols-2 gap-10 max-w-5xl mx-auto">
+            <div className="max-w-xl mx-auto">
               {[
                 {
                   name: "Saurabh Singh",
@@ -400,14 +400,6 @@ export default function LandingPage() {
                   desc: "Backend-focused full-stack engineer passionate about AI agents, DevOps, and scalable systems.",
                   github: "https://github.com/DevSars24",
                   linkedin: "https://www.linkedin.com/in/saurabh-singh-25639a306",
-                },
-                {
-                  name: "Nitesh Kumar Varma",
-                  role: "AI/ML Lead",
-                  initials: "NKV",
-                  desc: "AI/ML engineer specializing in agentic chatbots, LLMs, and intelligent agricultural systems.",
-                  github: "https://github.com/niteshkumarvarma30",
-                  linkedin: "https://www.linkedin.com/in/niteshkumarvarmaa45",
                 },
               ].map((dev, i) => (
                 <div key={i} className="reveal bg-[#0a0a0a] border border-white/5 p-10 rounded-[2.5rem] hover:border-white/20 hover:-translate-y-4 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] transition-all duration-500 group cursor-pointer relative overflow-hidden">
