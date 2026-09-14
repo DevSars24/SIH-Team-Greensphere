@@ -1,6 +1,7 @@
 import os
 import uuid
 import base64
+import asyncio
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Body, Response
 from pydantic import BaseModel
@@ -34,7 +35,7 @@ if not HF_TOKEN:
 LOGIC_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 IMAGE_MODEL = "black-forest-labs/FLUX.1-schnell"   # Free HF Inference API model — no local loading
 STT_MODEL = "openai/whisper-large-v3-turbo"
-SARVAM_API_KEY = os.getenv("SARVAM_API_KEY", "sk_mqiis1cf_mJUKgNtiSX3EV2Oakvc4Dbbm")
+SARVAM_API_KEY = os.getenv("SARVAM_API_KEY", "")
 
 # Clients
 client = InferenceClient(api_key=HF_TOKEN)
@@ -67,19 +68,21 @@ class HistoryResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Helper: detect image-generation intent (English + Hindi keywords)
+# Helper: detect image-generation intent (English + Hindi + Hinglish)
 # ---------------------------------------------------------------------------
 IMAGE_KEYWORDS_EN = [
     "generate an image", "generate image", "create an image", "create image",
     "draw a", "draw an", "show me a picture", "show me an image",
     "make an image", "make a picture", "make a photo",
-    "produce an image", "produce a picture",
+    "produce an image", "produce a picture", "generate photo", "create photo",
+    "photo bana", "image bana", "tasveer bana", "chitra bana", "photo generate", "image generate",
+    "generate picture", "draw picture"
 ]
 IMAGE_KEYWORDS_HI = [
-    "चित्र बनाओ", "चित्र जनरेट", "चित्र दिखाओ", "चित्र बना",
-    "तस्वीर बनाओ", "तस्वीर जनरेट", "तस्वीर दिखाओ",
-    "फोटो बनाओ", "फोटो जनरेट", "इमेज बनाओ", "इमेज जनरेट",
-    "नया चित्र", "नया फोटो", "एक चित्र", "एक तस्वीर",
+    "चित्र बनाओ", "चित्र जनरेट", "चित्र दिखाओ", "चित्र बना", "चित्र",
+    "तस्वीर बनाओ", "तस्वीर जनरेट", "तस्वीर दिखाओ", "तस्वीर बना",
+    "फोटो बनाओ", "फोटो जनरेट", "इमेज बनाओ", "इमेज जनरेट", "इमेज बना", "फोटो बना",
+    "नया चित्र", "नया फोटो", "एक चित्र", "एक तस्वीर", "इमेज", "फोटो"
 ]
 
 def is_image_request(text: str) -> bool:
@@ -88,45 +91,65 @@ def is_image_request(text: str) -> bool:
         if kw in lower:
             return True
     for kw in IMAGE_KEYWORDS_HI:
-        if kw in text:   # Hindi: don't lower-case, it doesn't matter but keep consistent
+        if kw in text:
             return True
     return False
 
 
 # ---------------------------------------------------------------------------
-# Image Generation — HuggingFace Inference API (no local model, no GPU needed)
+# ---------------------------------------------------------------------------
+# Image Generation — Resilient Fast Generation + Fallback
 # ---------------------------------------------------------------------------
 def generate_image_hf(prompt: str) -> Optional[str]:
     """
-    Calls HuggingFace Inference API to generate an image.
-    Returns base64-encoded JPEG string, or None on failure.
-    No local model loading — works on any server.
+    Calls Pollinations AI or Hugging Face to generate an image.
+    Returns base64-encoded JPEG string, or stock fallback on failure.
     """
+    enhanced_prompt = f"{prompt}, high quality, realistic, detailed agricultural photography"
+    
+    # Attempt 1: Pollinations AI with short timeout (5 seconds max)
     try:
-        print(f"🎨 Generating image with prompt: {prompt[:80]}...")
-
-        # Enhance the prompt slightly for better agricultural images
-        enhanced_prompt = (
-            f"{prompt}, high quality, realistic, detailed, professional photograph"
-        )
-
-        # text_to_image returns a PIL Image object
-        pil_image = client.text_to_image(
-            enhanced_prompt,
-            model=IMAGE_MODEL,
-        )
-
-        buffered = io.BytesIO()
-        pil_image.save(buffered, format="JPEG", quality=90)
-        b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
-        print("✅ Image generated successfully.")
-        return b64
-
+        import urllib.parse
+        encoded = urllib.parse.quote(enhanced_prompt)
+        poll_url = f"https://image.pollinations.ai/prompt/{encoded}?width=768&height=512&nologo=true&seed=42"
+        resp = requests.get(poll_url, timeout=5)
+        if resp.status_code == 200 and len(resp.content) > 1000:
+            b64 = base64.b64encode(resp.content).decode("utf-8")
+            print("[IMAGE] Pollinations generation successful.")
+            return b64
     except Exception as e:
-        print(f"❌ Image Gen Error: {e}")
-        import traceback
-        traceback.print_exc()
-        return None
+        print(f"[IMAGE] Pollinations error/timeout: {e}")
+
+    # Attempt 2: Hugging Face Inference API with 5s timeout
+    token = os.getenv("HF_TOKEN") or HF_TOKEN
+    if token:
+        try:
+            print(f"[IMAGE] Attempting HF generation: {prompt[:60]}...")
+            hf_client = InferenceClient(api_key=token, timeout=5)
+            pil_image = hf_client.text_to_image(
+                enhanced_prompt,
+                model=IMAGE_MODEL,
+            )
+            buffered = io.BytesIO()
+            pil_image.save(buffered, format="JPEG", quality=85)
+            b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+            print("[IMAGE] HF Generation Successful.")
+            return b64
+        except Exception as e:
+            print(f"[IMAGE] HF Generation failed: {e}")
+
+    # Attempt 3: Stock agricultural fallback image
+    try:
+        fallback_url = "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80"
+        resp = requests.get(fallback_url, timeout=5)
+        if resp.status_code == 200:
+            b64 = base64.b64encode(resp.content).decode("utf-8")
+            print("[IMAGE] Stock agricultural fallback image returned.")
+            return b64
+    except Exception as e:
+        print(f"[IMAGE] Stock fallback error: {e}")
+
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -138,7 +161,7 @@ def get_location_name(lat: float, lon: float) -> str:
             f"https://api.bigdatacloud.net/data/reverse-geocode-client"
             f"?latitude={lat}&longitude={lon}&localityLanguage=en"
         )
-        res = requests.get(url, timeout=5)
+        res = requests.get(url, timeout=3)
         if res.status_code == 200:
             data = res.json()
             city = data.get("city", "")
@@ -155,7 +178,7 @@ def get_real_weather(lat: float, lon: float) -> str:
             f"https://api.open-meteo.com/v1/forecast"
             f"?latitude={lat}&longitude={lon}&current_weather=true"
         )
-        res = requests.get(url, timeout=5)
+        res = requests.get(url, timeout=3)
         if res.status_code == 200:
             current = res.json().get("current_weather", {})
             temp = current.get("temperature")
@@ -204,7 +227,7 @@ async def update_session_messages(
 
 
 # ---------------------------------------------------------------------------
-# Main AI response function
+# Main AI response function powered by Gemini 2.5 Flash Lite
 # ---------------------------------------------------------------------------
 def get_ai_response(
     history: List[ChatMessage],
@@ -214,9 +237,7 @@ def get_ai_response(
     lat: Optional[float] = None,
     lon: Optional[float] = None,
 ):
-    # ------------------------------------------------------------------
     # 1. Detect image-generation requests FIRST
-    # ------------------------------------------------------------------
     if is_image_request(current_prompt):
         img_b64 = generate_image_hf(current_prompt)
         if img_b64:
@@ -228,86 +249,58 @@ def get_ai_response(
                 "(Sorry, image generation failed. Please try again later.)"
             )
 
-    # ------------------------------------------------------------------
     # 2. Build location/weather context
-    # ------------------------------------------------------------------
     context = ""
     if lat is not None and lon is not None:
         loc_name = get_location_name(lat, lon)
         weather = get_real_weather(lat, lon)
         context = (
-            f"\n\n[System Info - User Context]\n"
+            f"\n\n[Live Location & Weather Context]\n"
             f"Location: {loc_name}\nWeather: {weather}\n"
-            f"Use this context to provide personalized agricultural advice."
         )
 
-    # ------------------------------------------------------------------
-    # 3. Vision — use Gemini if image is attached
-    # ------------------------------------------------------------------
-    if image_b64 and GEMINI_API_KEY:
-        try:
-            import PIL.Image
-
-            image_bytes = base64.b64decode(image_b64)
-            img = PIL.Image.open(io.BytesIO(image_bytes))
-
-            model = genai.GenerativeModel("gemini-2.5-flash-lite")
-            prompt = (
-                f"You are Krishi Sathi, an expert agricultural AI assistant. "
-                f"Respond strictly in {lang}. "
-                f"Analyze this image for crop diseases or issues. "
-                f"Use this context if needed: {context}\n"
-                f"User Question: {current_prompt}"
-            )
-            response = model.generate_content([prompt, img])
-            return response.text
-        except Exception as e:
-            print(f"Gemini Vision Error: {e}")
-            return "Sorry, I encountered an error analyzing your image with Gemini."
-
-    # ------------------------------------------------------------------
-    # 4. Standard text response via HF Inference API
-    # ------------------------------------------------------------------
+    # 3. Use Gemini Model (gemini-2.5-flash-lite)
     system_instruction = (
-        f"You are Krishi Sathi, an expert agricultural AI assistant. "
-        f"Respond strictly in {lang}. "
-        "Be helpful, concise, and empathetic to farmers. "
-        "If an image is provided, analyze it for crop diseases or issues. "
-        "Use the provided conversation history for context."
+        f"You are Krishi Sathi, an expert agricultural AI assistant dedicated to helping Indian farmers. "
+        f"Respond strictly in the requested language: {lang}. "
+        "Tone: Empathetic, respectful (use terms like Kisan Bhai, Namaste), practical, concise, and highly actionable. "
+        "Cover farming advice, crop diseases, organic fertilizers, market price advice, weather precautions, and government schemes. "
         f"{context}"
     )
 
-    messages = [{"role": "system", "content": system_instruction}]
-
-    # Add recent history (last 10 messages to save tokens)
-    recent_msgs = history[-10:] if len(history) > 10 else history
-    for msg in recent_msgs:
-        role = "user" if msg.role == "user" else "assistant"
-        messages.append({"role": role, "content": msg.content})
-
-    # Current user message
-    user_content = []
-    if image_b64:
-        user_content.append(
-            {
-                "type": "image_url",
-                "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"},
-            }
-        )
-    user_content.append({"type": "text", "text": current_prompt})
-    messages.append({"role": "user", "content": user_content})
-
     try:
-        response = client.chat_completion(
-            model=LOGIC_MODEL,
-            messages=messages,
-            max_tokens=1000,
-            temperature=0.5,
+        model = genai.GenerativeModel(
+            model_name="gemini-2.5-flash-lite",
+            system_instruction=system_instruction
         )
-        return response.choices[0].message.content
+
+        # Build contents from history and current message
+        contents = []
+        recent_msgs = history[-8:] if len(history) > 8 else history
+        for msg in recent_msgs:
+            role = "user" if msg.role == "user" else "model"
+            contents.append({"role": role, "parts": [msg.content]})
+
+        current_parts = []
+        if image_b64:
+            import PIL.Image
+            image_bytes = base64.b64decode(image_b64)
+            img = PIL.Image.open(io.BytesIO(image_bytes))
+            current_parts.append(img)
+            current_parts.append(f"Analyze this image for crop health or issue and answer: {current_prompt}")
+        else:
+            current_parts.append(current_prompt)
+
+        contents.append({"role": "user", "parts": current_parts})
+
+        response = model.generate_content(contents)
+        if response and response.text:
+            return response.text
+        return "Namaste! Main aapki kheti sambandhi madad ke liye taiyar hoon. Kripya apna prashna dobara poochein."
+
     except Exception as e:
-        print(f"AI Error: {e}")
-        return f"Sorry, I encountered an error analyzing your request. ({e})"
+        print(f"Gemini Chat Error: {e}")
+        return f"Maaf kijiye, abhi server se connect karne mein samasya aa rahi hai. ({str(e)})"
 
 
 def generate_title(first_message: str):
@@ -377,41 +370,51 @@ async def get_history(session_id: str):
 
 @router.post("/message")
 async def send_message(req: MessageRequest):
-    # 1. Retrieve session
-    session = await get_session(req.session_id)
+    try:
+        # 1. Retrieve session
+        session = await get_session(req.session_id)
 
-    # 2. Get AI response
-    ai_text = get_ai_response(
-        session.messages,
-        req.message,
-        req.image,
-        req.language,
-        req.latitude,
-        req.longitude,
-    )
+        # 2. Get AI response (non-blocking in threadpool)
+        ai_text = await asyncio.to_thread(
+            get_ai_response,
+            session.messages,
+            req.message,
+            req.image,
+            req.language,
+            req.latitude,
+            req.longitude,
+        )
 
-    # 3. Extract generated image if present
-    bot_image_url = None
-    if "[IMAGE_GENERATED:" in ai_text:
-        parts = ai_text.split("[IMAGE_GENERATED:")
-        bot_image_url = "data:image/jpeg;base64," + parts[1].split("]")[0]
-        ai_text = parts[0].strip()
+        # 3. Extract generated image if present
+        bot_image_url = None
+        if "[IMAGE_GENERATED:" in ai_text:
+            parts = ai_text.split("[IMAGE_GENERATED:")
+            bot_image_url = "data:image/jpeg;base64," + parts[1].split("]")[0]
+            ai_text = parts[0].strip()
 
-    # 4. Persist messages
-    user_msg = ChatMessage(
-        role="user",
-        content=req.message,
-        image_url=req.image if req.image else None,
-    )
-    bot_msg = ChatMessage(role="assistant", content=ai_text, image_url=bot_image_url)
+        # 4. Persist messages
+        user_msg = ChatMessage(
+            role="user",
+            content=req.message,
+            image_url=req.image if req.image else None,
+        )
+        bot_msg = ChatMessage(role="assistant", content=ai_text, image_url=bot_image_url)
 
-    new_title = None
-    if len(session.messages) == 0:
-        new_title = generate_title(req.message)
+        new_title = None
+        if len(session.messages) == 0:
+            new_title = generate_title(req.message)
 
-    await update_session_messages(req.session_id, [user_msg, bot_msg], update_title=new_title)
+        await update_session_messages(req.session_id, [user_msg, bot_msg], update_title=new_title)
 
-    return {"role": "assistant", "content": ai_text, "image": bot_image_url}
+        return {"role": "assistant", "content": ai_text, "image": bot_image_url}
+
+    except Exception as e:
+        print(f"[CHAT ERROR] send_message failed: {e}")
+        return {
+            "role": "assistant",
+            "content": "माफ़ करें, सर्वर से संपर्क करने में समस्या आई है। कृपया पुनः प्रयास करें। (Sorry, server error. Please try again.)",
+            "image": None
+        }
 
 
 @router.post("/transcribe")
@@ -431,10 +434,11 @@ async def synthesize_voice(
     text: str = Body(..., embed=True),
     target_language_code: str = Body("hi-IN", embed=True),
 ):
-    if not text:
-        raise HTTPException(status_code=400, detail="No text provided")
+    sarvam_key = os.getenv("SARVAM_API_KEY") or SARVAM_API_KEY
+    if not sarvam_key:
+        raise HTTPException(status_code=500, detail="SARVAM_API_KEY not configured")
     try:
-        sarvam_client = SarvamAI(api_subscription_key=SARVAM_API_KEY)
+        sarvam_client = SarvamAI(api_subscription_key=sarvam_key)
         response = sarvam_client.text_to_speech.convert(
             model="bulbul:v3",
             text=text,

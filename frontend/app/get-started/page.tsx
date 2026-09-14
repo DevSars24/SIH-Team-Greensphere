@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { API_BASE_URL } from "@/lib/config";
 import {
   MoveRight,
   Bot,
@@ -91,7 +92,7 @@ export default function GetStarted() {
     if (!city) return;
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:8000/kisan-kendra/find?city=${city}`);
+      const res = await fetch(`${API_BASE_URL}/kisan-kendra/find?city=${encodeURIComponent(city)}`);
       const data = await res.json();
       setKendraResult(data);
     } catch (e) {

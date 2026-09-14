@@ -6,8 +6,8 @@ import { Users, MapPin, Phone, Plus, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner"; // Assuming sonner or similar toast
-// If no toast lib installed, we can remove it or use simple alert
+import { toast } from "sonner";
+import { API_BASE_URL } from "@/lib/config";
 
 // Types
 interface SHG {
@@ -46,7 +46,7 @@ export default function SHGNetwork() {
 
     const fetchSHGs = async () => {
         try {
-            const res = await fetch("http://localhost:8000/women/shgs");
+            const res = await fetch(`${API_BASE_URL}/women/shgs`);
             const data = await res.json();
             setShgs(data);
         } catch (error) {
@@ -70,7 +70,7 @@ export default function SHGNetwork() {
                 location: `${formData.city}, ${formData.state}` // Construct location string
             };
 
-            const res = await fetch("http://localhost:8000/women/shgs", {
+            const res = await fetch(`${API_BASE_URL}/women/shgs`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)

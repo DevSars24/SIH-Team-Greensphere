@@ -5,6 +5,7 @@ import { Bot, Send, Loader2, X, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
+import { API_BASE_URL } from "@/lib/config";
 
 interface Message {
     role: "user" | "bot";
@@ -35,7 +36,7 @@ export default function TrainingChatbot() {
         setLoading(true);
 
         try {
-            const res = await fetch("http://localhost:8000/women/training-chat", {
+            const res = await fetch(`${API_BASE_URL}/women/training-chat`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ message: userMsg })
