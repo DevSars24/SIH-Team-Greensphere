@@ -16,27 +16,43 @@ export default function AudioRecorder({ onRecordingComplete, disabled }: AudioRe
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const mediaRecorder = new MediaRecorder(stream);
+
+            let mimeType = "";
+            if (typeof MediaRecorder.isTypeSupported === "function") {
+                if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+                    mimeType = "audio/webm;codecs=opus";
+                } else if (MediaRecorder.isTypeSupported("audio/webm")) {
+                    mimeType = "audio/webm";
+                } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
+                    mimeType = "audio/mp4";
+                }
+            }
+
+            const mediaRecorder = mimeType
+                ? new MediaRecorder(stream, { mimeType })
+                : new MediaRecorder(stream);
+
             mediaRecorderRef.current = mediaRecorder;
             chunksRef.current = [];
 
             mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) {
+                if (e.data && e.data.size > 0) {
                     chunksRef.current.push(e.data);
                 }
             };
 
             mediaRecorder.onstop = () => {
-                const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+                const recordedType = mediaRecorder.mimeType || mimeType || "audio/webm";
+                const blob = new Blob(chunksRef.current, { type: recordedType });
                 onRecordingComplete(blob);
                 chunksRef.current = [];
             };
 
-            mediaRecorder.start();
+            mediaRecorder.start(250);
             setIsRecording(true);
         } catch (err) {
             console.error("Error accessing microphone:", err);
-            alert("Microphone access denied or not available.");
+            alert("Microphone access denied or not available. Please check your browser permissions.");
         }
     };
 

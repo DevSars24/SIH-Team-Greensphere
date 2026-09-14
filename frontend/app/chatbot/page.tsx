@@ -241,54 +241,104 @@ export default function ChatbotPage() {
     }
   };
 
-  const toggleAudio = async (text: string, index: number) => {
-    if (playingMessageIndex === index && currentAudioRef.current) {
-      currentAudioRef.current.pause();
-      currentAudioRef.current.currentTime = 0;
+  const cleanMarkdownForSpeech = (raw: string) => {
+    return raw
+      .replace(/\[IMAGE_GENERATED:[^\]]+\]/g, "")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/https?:\/\/\S+/g, "")
+      .replace(/[*#_~`>\\-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
+
+  const speakWithBrowserSpeech = (textToSpeak: string, langCode: string) => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      utterance.lang = langCode;
+      utterance.rate = 0.95;
+      utterance.onend = () => setPlayingMessageIndex(null);
+      utterance.onerror = () => setPlayingMessageIndex(null);
+      window.speechSynthesis.speak(utterance);
+    } else {
       setPlayingMessageIndex(null);
-      currentAudioRef.current = null;
+    }
+  };
+
+  const toggleAudio = async (text: string, index: number) => {
+    // If clicking currently playing message, stop playback
+    if (playingMessageIndex === index) {
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause();
+        currentAudioRef.current.currentTime = 0;
+        currentAudioRef.current = null;
+      }
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      setPlayingMessageIndex(null);
       return;
     }
 
+    // Stop any current playback
     if (currentAudioRef.current) {
       currentAudioRef.current.pause();
       currentAudioRef.current.currentTime = 0;
+      currentAudioRef.current = null;
+    }
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
     }
 
     setPlayingMessageIndex(index);
 
+    const sarvamLangMap: Record<string, string> = {
+      "English": "en-IN",
+      "Hindi": "hi-IN",
+      "Marathi": "mr-IN",
+      "Punjabi": "pa-IN"
+    };
+    const langCode = sarvamLangMap[language] || "hi-IN";
+    const cleanText = cleanMarkdownForSpeech(text);
+
+    if (!cleanText) {
+      setPlayingMessageIndex(null);
+      return;
+    }
+
     try {
-      const sarvamLangMap: Record<string, string> = {
-        "English": "en-IN",
-        "Hindi": "hi-IN",
-        "Marathi": "mr-IN",
-        "Punjabi": "pa-IN"
-      };
       const response = await fetch(`${API_BASE_URL}/chat/synthesize`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, target_language_code: sarvamLangMap[language] || "hi-IN" }),
+        body: JSON.stringify({
+          text: cleanText,
+          language_code: langCode,
+          target_language_code: langCode
+        }),
       });
+
       if (response.ok) {
         const audioBlob = await response.blob();
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const audio = new Audio(audioUrl);
-        audio.onended = () => {
-          if (playingMessageIndex === index) {
+        if (audioBlob.size > 500) {
+          const audioUrl = URL.createObjectURL(audioBlob);
+          const audio = new Audio(audioUrl);
+          audio.onended = () => {
             setPlayingMessageIndex(null);
-          }
-        };
-        currentAudioRef.current = audio;
-        audio.play().catch((err) => {
-          console.log("Audio playback interrupted:", err);
-          setPlayingMessageIndex(null);
-        });
-      } else {
-        setPlayingMessageIndex(null);
+          };
+          audio.onerror = () => {
+            speakWithBrowserSpeech(cleanText, langCode);
+          };
+          currentAudioRef.current = audio;
+          await audio.play();
+          return;
+        }
       }
+
+      // If backend TTS fails or returns empty audio, use browser Web Speech API
+      speakWithBrowserSpeech(cleanText, langCode);
     } catch (err) {
-      console.error("Audio Play Error:", err);
-      setPlayingMessageIndex(null);
+      console.warn("Backend TTS notice, falling back to browser speech synthesis:", err);
+      speakWithBrowserSpeech(cleanText, langCode);
     }
   };
 

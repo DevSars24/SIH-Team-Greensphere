@@ -14,6 +14,7 @@ from database import get_database
 from models.chat import ChatSession, ChatMessage
 import google.generativeai as genai
 import io
+import re
 
 load_dotenv()
 
@@ -65,6 +66,24 @@ class SessionSummary(BaseModel):
 class HistoryResponse(BaseModel):
     session_id: str
     messages: List[dict]
+
+class SynthesizeRequest(BaseModel):
+    text: str
+    target_language_code: Optional[str] = None
+    language_code: Optional[str] = "hi-IN"
+
+def clean_text_for_speech(text: str) -> str:
+    # Remove image generated tags
+    text = re.sub(r'\[IMAGE_GENERATED:[^\]]+\]', '', text)
+    # Remove markdown links [text](url) -> text
+    text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
+    # Remove urls
+    text = re.sub(r'http\S+|www\.\S+', '', text)
+    # Remove markdown bold/italics/headings/bullet points/special symbols
+    text = re.sub(r'[*#_~`>-]', ' ', text)
+    # Remove extra spaces/newlines
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
 
 
 # ---------------------------------------------------------------------------
@@ -423,26 +442,67 @@ async def transcribe_voice(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="No audio file uploaded")
     try:
         audio_bytes = await file.read()
-        output = audio_client.automatic_speech_recognition(audio_bytes, model=STT_MODEL)
-        return {"text": output.text}
+
+        # 1. Hugging Face Whisper Turbo (if HF_TOKEN configured)
+        hf_token = os.getenv("HF_TOKEN") or HF_TOKEN
+        if hf_token:
+            try:
+                hf_audio = InferenceClient(api_key=hf_token, headers={"Content-Type": file.content_type or "audio/webm"})
+                output = hf_audio.automatic_speech_recognition(audio_bytes, model=STT_MODEL)
+                if hasattr(output, "text") and output.text.strip():
+                    return {"text": output.text.strip()}
+            except Exception as hf_err:
+                print(f"[TRANSCRIBE] HF Whisper notice: {hf_err}")
+
+        # 2. Google Gemini Audio Transcription Fallback
+        gemini_key = os.getenv("GEMINI_API_KEY") or GEMINI_API_KEY
+        if gemini_key:
+            try:
+                genai.configure(api_key=gemini_key)
+                model = genai.GenerativeModel("gemini-2.5-flash-lite")
+                part = {"mime_type": file.content_type or "audio/webm", "data": audio_bytes}
+                res = model.generate_content([
+                    part,
+                    "Transcribe the spoken audio verbatim in its original spoken language (Hindi, Marathi, English, Punjabi, etc.). Return ONLY the transcribed text without quotes or preamble."
+                ])
+                if res and res.text and res.text.strip():
+                    return {"text": res.text.strip()}
+            except Exception as gem_err:
+                print(f"[TRANSCRIBE] Gemini Audio notice: {gem_err}")
+
+        raise HTTPException(status_code=500, detail="Could not transcribe audio via available engines.")
     except Exception as e:
+        print(f"[TRANSCRIBE ERROR]: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/synthesize")
-async def synthesize_voice(
-    text: str = Body(..., embed=True),
-    target_language_code: str = Body("hi-IN", embed=True),
-):
+async def synthesize_voice(req: SynthesizeRequest):
+    clean_text = clean_text_for_speech(req.text)
+    if not clean_text:
+        raise HTTPException(status_code=400, detail="No text provided")
+
+    # Trim to safe length for Sarvam API (max ~480 chars to prevent API rejection/timeouts)
+    if len(clean_text) > 480:
+        clean_text = clean_text[:480].rsplit('.', 1)[0] + "."
+        if len(clean_text) < 40:
+            clean_text = clean_text_for_speech(req.text)[:450]
+
+    lang = req.language_code or req.target_language_code or "hi-IN"
+    valid_sarvam_langs = ['bn-IN', 'en-IN', 'gu-IN', 'hi-IN', 'kn-IN', 'ml-IN', 'mr-IN', 'od-IN', 'pa-IN', 'ta-IN', 'te-IN']
+    if lang not in valid_sarvam_langs:
+        lang = "hi-IN"
+
     sarvam_key = os.getenv("SARVAM_API_KEY") or SARVAM_API_KEY
     if not sarvam_key:
         raise HTTPException(status_code=500, detail="SARVAM_API_KEY not configured")
     try:
         sarvam_client = SarvamAI(api_subscription_key=sarvam_key)
+        # Note: keyword is 'language_code' in Sarvam AI Python SDK
         response = sarvam_client.text_to_speech.convert(
             model="bulbul:v3",
-            text=text,
-            target_language_code=target_language_code,
+            text=clean_text,
+            language_code=lang,
             speaker="shubh",
         )
         if response and response.audios and len(response.audios) > 0:
